@@ -2,11 +2,14 @@ package com.example.MyFirstProject.model;
 
 import lombok.Data;
 import lombok.ToString;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,16 +23,13 @@ public class User {
     private Long id;
 
     @NotNull
-    @Size(min = 1)
     @Column
     private String firstName;
 
     @NotNull
-    @Size(min = 1)
     @Column
     private String lastName;
 
-    @NotNull
     @Column
     private int age;
 
@@ -41,6 +41,18 @@ public class User {
     @Email
     @Column
     private String email;
+
+//    private Collection<Role> authorities;
+//
+//    private String userName;
+//
+//    private boolean accountNonExpired;
+//
+//    private boolean accountNonLocked;
+//
+//    private boolean credentialsNonExpired;
+//
+//    private boolean enabled;
 
     @ManyToMany
     @JoinTable(
@@ -64,7 +76,9 @@ public class User {
     public User() {
     }
 
-    public User(@NotNull @Email String email, @NotNull String password) {
+    public User(@NotNull String firstName, @NotNull String lastName, @NotNull String password, @NotNull @Email String email) {
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.password = password;
         this.email = email;
     }
@@ -99,10 +113,6 @@ public class User {
 
     public void setAge(int age) {
         this.age = age;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public void setPassword(String password) {
@@ -140,6 +150,69 @@ public class User {
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
+
+
+    public String getPassword() {
+        return password;
+    }
+
+//    @Override
+//    public String getUsername() {
+//        return firstName;
+//    }
+//
+//    @Override
+//    public Collection<Role> getAuthorities() {
+//        return authorities;
+//    }
+//
+//    public void setAuthorities(Collection<Role> authorities) {
+//        this.authorities = authorities;
+//    }
+//
+//    public String getUserName() {
+//        return userName;
+//    }
+//
+//    public void setUserName(String userName) {
+//        this.userName = userName;
+//    }
+//
+//    @Override
+//    public boolean isAccountNonExpired() {
+//        return accountNonExpired;
+//    }
+//
+//    public void setAccountNonExpired(boolean accountNonExpired) {
+//        this.accountNonExpired = accountNonExpired;
+//    }
+//
+//    @Override
+//    public boolean isAccountNonLocked() {
+//        return accountNonLocked;
+//    }
+//
+//    public void setAccountNonLocked(boolean accountNonLocked) {
+//        this.accountNonLocked = accountNonLocked;
+//    }
+//
+//    @Override
+//    public boolean isCredentialsNonExpired() {
+//        return credentialsNonExpired;
+//    }
+//
+//    public void setCredentialsNonExpired(boolean credentialsNonExpired) {
+//        this.credentialsNonExpired = credentialsNonExpired;
+//    }
+//
+//    @Override
+//    public boolean isEnabled() {
+//        return enabled;
+//    }
+//
+//    public void setEnabled(boolean enabled) {
+//        this.enabled = enabled;
+//    }
 
     @Override
     public String toString() {

@@ -1,10 +1,11 @@
 package com.example.MyFirstProject.service;
 
 import com.example.MyFirstProject.model.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 
-public interface UserService {
+public interface UserService  {
 
     User registrationUser(User user);
 
