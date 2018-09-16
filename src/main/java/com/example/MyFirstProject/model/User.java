@@ -3,6 +3,7 @@ package com.example.MyFirstProject.model;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -12,11 +13,14 @@ import java.util.Set;
 @NoArgsConstructor
 @ToString
 @Entity
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+
+    @Column
+    private String username;
 
     @Column
     private String firstName;
@@ -25,25 +29,25 @@ public class User {
     private String lastName;
 
     @Column
+    private String email;
+
+    @Column
     private int age;
 
     @Column
     private String password;
 
     @Column
-    private String email;
+    private boolean accountNonExpired;
 
-//    private Collection<Role> authorities;
-//
-//    private String userName;
-//
-//    private boolean accountNonExpired;
-//
-//    private boolean accountNonLocked;
-//
-//    private boolean credentialsNonExpired;
-//
-//    private boolean enabled;
+    @Column
+    private boolean accountNonLocked;
+
+    @Column
+    private boolean credentialsNonExpired;
+
+    @Column
+    private boolean enabled;
 
     @ManyToMany(cascade = CascadeType.PERSIST)
     @JoinTable(
@@ -62,7 +66,7 @@ public class User {
             joinColumns = {@JoinColumn(name = "user_id")},
             inverseJoinColumns = {@JoinColumn(name = "role_id")}
     )
-    private Set<Role> roles = new HashSet<>();
+    private Set<Role> authorities = new HashSet<>();
 
     public User(String email, String password) {
         this.email = email;

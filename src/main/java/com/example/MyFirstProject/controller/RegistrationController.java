@@ -1,23 +1,22 @@
 package com.example.MyFirstProject.controller;
 
-import com.example.MyFirstProject.model.User;
-import com.example.MyFirstProject.model.dto.UserRegistrationDTO;
+import com.example.MyFirstProject.model.dto.UserDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
-public class MainController {
+@RequestMapping("/users")
+public class RegistrationController {
 
     @Autowired
     private UserService userService;
 
-    @RequestMapping(value = "registration" , method = RequestMethod.POST)
-    public void registerUserAccount(@RequestBody @Validated UserRegistrationDTO userRegistrationDTO) {
-        System.out.println(userService.registrationUser(userRegistrationDTO));
+    @PostMapping("/sign-up")
+    public void signUp(@RequestBody @Validated UserDTO userDTO) {
+        System.out.println(userService.signUp(userDTO));
     }
 
     @RequestMapping(value = "userUpdate" , method = RequestMethod.POST)
