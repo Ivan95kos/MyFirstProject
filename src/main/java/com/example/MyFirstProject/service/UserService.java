@@ -1,16 +1,21 @@
 package com.example.MyFirstProject.service;
 
 import com.example.MyFirstProject.model.User;
+import com.example.MyFirstProject.model.dto.UserDTO;
+import com.example.MyFirstProject.model.dto.UserUpdateDTO;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 
-public interface UserService {
+public interface UserService extends UserDetailsService{
 
-    User registrationUser(User user);
+    User signUp(UserDTO userDTO);
+
+    User updateUser(String email, UserUpdateDTO userUpdateDTO);
+
+    User findByUsername(String username);
 
     void delete(User user);
-
-    User getByName(String name);
 
     User editUser(User user);
 
