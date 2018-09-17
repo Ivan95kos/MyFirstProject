@@ -3,11 +3,10 @@ package com.example.MyFirstProject.service;
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.UserDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 
-public interface UserService extends UserDetailsService{
+public interface UserService {
 
     User signUp(UserDTO userDTO);
 

@@ -1,7 +1,6 @@
 package com.example.MyFirstProject.model;
 
 
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

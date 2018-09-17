@@ -27,7 +27,7 @@ public class UserUpdateDTO {
     private String email;
 
     @NotNull
-    private int age;
+    private Integer age;
 
     private Set<Language> languages = new HashSet<>();
 

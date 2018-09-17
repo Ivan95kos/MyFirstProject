@@ -2,18 +2,18 @@ package com.example.MyFirstProject.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @NoArgsConstructor
-@ToString
 @Entity
-public class User implements UserDetails {
+public class User implements Serializable {
+
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -22,10 +22,10 @@ public class User implements UserDetails {
     @Column
     private String username;
 
-    @Column
+    @Column(name = "first_name")
     private String firstName;
 
-    @Column
+    @Column(name = "last_name")
     private String lastName;
 
     @Column
@@ -36,18 +36,6 @@ public class User implements UserDetails {
 
     @Column
     private String password;
-
-    @Column
-    private boolean accountNonExpired;
-
-    @Column
-    private boolean accountNonLocked;
-
-    @Column
-    private boolean credentialsNonExpired;
-
-    @Column
-    private boolean enabled;
 
     @ManyToMany(cascade = CascadeType.PERSIST)
     @JoinTable(
@@ -68,8 +56,8 @@ public class User implements UserDetails {
     )
     private Set<Role> authorities = new HashSet<>();
 
-    public User(String email, String password) {
-        this.email = email;
+    public User(String username, String password) {
+        this.username = username;
         this.password = password;
     }
 }
