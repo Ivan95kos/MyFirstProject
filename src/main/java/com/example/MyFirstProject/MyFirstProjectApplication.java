@@ -14,6 +14,15 @@ public class MyFirstProjectApplication {
 //        return new BCryptPasswordEncoder(8);
 //    }
 
+//    @Bean
+//    public AuthenticationManager authenticationManagerBean(){
+//       return new AuthenticationManager() {
+//            @Override
+//            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+//                return null;
+//            }
+//        };
+//    }
 
     public static void main(String[] args) {
         SpringApplication.run(MyFirstProjectApplication.class, args);
