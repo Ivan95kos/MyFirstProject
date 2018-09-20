@@ -12,7 +12,7 @@ import java.util.Set;
 public class File {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column
@@ -25,16 +25,16 @@ public class File {
     private String artist;
 
     @Column
-    private String albumm;
+    private String album;
 
     @Column
-    private int year;
+    private Integer year;
 
     @Column
-    private String commemnt;
+    private String comment;
 
     @Column
-    private int track;
+    private Integer track;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

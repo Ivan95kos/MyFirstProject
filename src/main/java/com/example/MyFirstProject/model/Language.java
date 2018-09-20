@@ -18,14 +18,10 @@ public class Language {
     private Long id;
 
     @NonNull
+    @Column(name = "language_of_communication")
     private String languageOfCommunication;
 
-    @ManyToMany
-    @JoinTable(
-            name = "lang_x_user",
-            joinColumns = {@JoinColumn(name = "lang_id")},
-            inverseJoinColumns = {@JoinColumn(name = "user_id")}
-    )
+    @ManyToMany(mappedBy = "languages")
     private Set<User> users = new HashSet<>();
 
 }

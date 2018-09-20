@@ -22,7 +22,7 @@ package com.example.MyFirstProject.config;
 //
 //        // Entry points
 //        http.authorizeRequests()//
-//                .antMatchers("/login","/registration","/userUpdate").permitAll()
+//                .antMatchers("/login","/signUp","/userUpdate").permitAll()
 //                // Disallow everything else..
 //                .anyRequest().authenticated()
 //            .and()
@@ -38,7 +38,7 @@ package com.example.MyFirstProject.config;
 ////        http
 //
 ////                .authorizeRequests()
-////                .antMatchers("/registration").permitAll()
+////                .antMatchers("/signUp").permitAll()
 ////                .anyRequest().authenticated()
 ////                .and()
 ////                .formLogin().permitAll()

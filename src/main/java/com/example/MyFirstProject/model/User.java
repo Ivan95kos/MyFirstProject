@@ -16,7 +16,7 @@ public class User implements Serializable {
 
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column
@@ -32,12 +32,12 @@ public class User implements Serializable {
     private String email;
 
     @Column
-    private int age;
+    private Integer age;
 
     @Column
     private String password;
 
-    @ManyToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(
             name = "lang_x_user",
             joinColumns = {@JoinColumn(name = "user_id")},
@@ -45,7 +45,7 @@ public class User implements Serializable {
     )
     private Set<Language> languages = new HashSet<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<File> files;
 
     @ManyToMany
@@ -54,7 +54,8 @@ public class User implements Serializable {
             joinColumns = {@JoinColumn(name = "user_id")},
             inverseJoinColumns = {@JoinColumn(name = "role_id")}
     )
-    private Set<Role> authorities = new HashSet<>();
+    private Set<Role> roles
+            = new HashSet<>();
 
     public User(String username, String password) {
         this.username = username;
