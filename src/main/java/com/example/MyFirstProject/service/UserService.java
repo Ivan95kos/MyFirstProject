@@ -18,9 +18,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+//import com.example.MyFirstProject.model.Role;
+//import com.example.MyFirstProject.repository.RoleRepository;
 
 @Service
 public class UserService {
@@ -33,6 +36,9 @@ public class UserService {
 
     @Autowired
     private LanguageRepository languageRepository;
+
+//    @Autowired
+//    private RoleService roleService;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -52,19 +58,10 @@ public class UserService {
 
     public String signUp(UserDTO userDTO) {
 
-//        try {
-//        if (userRepository.findOneByUsername(userDTO.getUsername()) != null){
-//            throw new HttpClientErrorException(HttpStatus.CONFLICT, "That username is taken.Try another");
-//        }
-//        }catch (HttpClientErrorException e){
-//            return "/signUp";
-//        }
-//        userRepository.save(new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword())));
-
         if (!userRepository.existsByUsername(userDTO.getUsername())) {
-            Set<Role> role = new HashSet<>();
             User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
-            user.setRoles(role);
+
+            user.setRoles(Collections.singleton(Role.USER));
 
             userRepository.save(user);
 
