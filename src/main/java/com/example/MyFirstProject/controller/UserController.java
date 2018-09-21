@@ -1,6 +1,8 @@
 package com.example.MyFirstProject.controller;
 
+import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.UserDTO;
+import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.service.UserService;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -8,12 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.AbstractMap;
 import java.util.Map;
@@ -67,6 +67,23 @@ public class UserController {
         Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
 
         return new ResponseEntity<>(tok, headers, HttpStatus.OK);
+    }
+
+    @ApiResponses(value = {//
+            @ApiResponse(code = 400, message = "Something went wrong"), //
+            @ApiResponse(code = 403, message = "Access denied"), //
+            @ApiResponse(code = 404, message = "The user doesn't exist"), //
+            @ApiResponse(code = 500, message = "Expired or invalid JWT token")})
+    @PatchMapping("/myself")
+    private String updateUser(@RequestBody @Validated UserUpdateDTO userUpdateDTO, Authentication authentication) {
+
+        User user = userService.findOneByUsername(authentication.getName());
+
+        System.out.println(user.toString());
+
+        userService.updateUser(user, userUpdateDTO);
+
+        return "successfully";
     }
 
 }

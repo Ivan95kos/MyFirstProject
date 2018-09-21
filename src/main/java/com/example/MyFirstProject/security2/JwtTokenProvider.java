@@ -16,7 +16,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -32,6 +34,11 @@ public class JwtTokenProvider {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
+    @PostConstruct
+    protected void init() {
+        SECRET = Base64.getEncoder().encodeToString(SECRET.getBytes());
+    }
+
     public String createToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
 
@@ -44,7 +51,7 @@ public class JwtTokenProvider {
                 .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(validity)
-                .signWith(SignatureAlgorithm.HS512, SECRET.getBytes())
+                .signWith(SignatureAlgorithm.HS512, SECRET)
                 .compact();
     }
 

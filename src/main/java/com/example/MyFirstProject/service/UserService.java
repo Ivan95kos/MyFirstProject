@@ -22,9 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-//import com.example.MyFirstProject.model.Role;
-//import com.example.MyFirstProject.repository.RoleRepository;
-
 @Service
 public class UserService {
 
@@ -71,21 +68,21 @@ public class UserService {
         }
     }
 
-    public User updateUser(User updateUser, UserUpdateDTO userUpdateDTO) {
+    public User updateUser(User user, UserUpdateDTO userUpdateDTO) {
 
         Set<Language> language = userUpdateDTO.getLanguages();
 
         languageRepository.saveAll(language);
 
-//        language.forEach(lan -> lan.getUsers().add(updateUser));
+//        language.forEach(lan -> lan.getUsers().add(user));
 
-        updateUser.setFirstName(userUpdateDTO.getFirstName());
-        updateUser.setLastName(userUpdateDTO.getLastName());
-        updateUser.setEmail(userUpdateDTO.getEmail());
-        updateUser.setAge(userUpdateDTO.getAge());
-        updateUser.setLanguages(userUpdateDTO.getLanguages());
+        user.setFirstName(userUpdateDTO.getFirstName());
+        user.setLastName(userUpdateDTO.getLastName());
+        user.setEmail(userUpdateDTO.getEmail());
+        user.setAge(userUpdateDTO.getAge());
+        user.setLanguages(userUpdateDTO.getLanguages());
 
-        return userRepository.save(updateUser);
+        return userRepository.save(user);
     }
 
     public User findOneByUsername(String username) {
