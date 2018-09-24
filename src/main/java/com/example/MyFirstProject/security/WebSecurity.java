@@ -10,7 +10,7 @@
 //import org.springframework.security.config.http.SessionCreationPolicy;
 //import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 //
-//import static com.example.MyFirstProject.security.SecurityConstants.SIGN_UP_URL;
+//import static com.example.MyFirstProject.security.SecurityConstants.SIGN_UP_USER;
 //
 //@EnableWebSecurity
 //public class WebSecurity extends WebSecurityConfigurerAdapter {
@@ -22,7 +22,7 @@
 //    @Override
 //    protected void configure(HttpSecurity http) throws Exception {
 //        http.cors().disable().csrf().disable().authorizeRequests()
-//                .antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll()
+//                .antMatchers(HttpMethod.POST, SIGN_UP_USER).permitAll()
 //                .anyRequest().authenticated()
 //                .and()
 //                .addFilter(new JWTAuthenticationFilter(authenticationManager()))

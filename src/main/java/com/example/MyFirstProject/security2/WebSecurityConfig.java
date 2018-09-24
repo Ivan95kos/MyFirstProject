@@ -13,8 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import static com.example.MyFirstProject.security2.SecurityConstants.SIGN_IN_URL;
-import static com.example.MyFirstProject.security2.SecurityConstants.SIGN_UP_URL;
+import static com.example.MyFirstProject.security2.SecurityConstants.*;
 
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -45,9 +44,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // No session will be created or used by spring security
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
+
+//        http.authorizeRequests()).authenticated();
+
         // Entry points
         http.authorizeRequests()//
-                .antMatchers(SIGN_UP_URL, SIGN_IN_URL).permitAll()//
+                .antMatchers(SIGN_UP_USER, SIGN_UP_ADMIN, SIGN_IN_URL).permitAll()//
+                .antMatchers("/admin/**").hasAnyAuthority("ADMIN")
                 // Disallow everything else..
                 .anyRequest().authenticated();
 

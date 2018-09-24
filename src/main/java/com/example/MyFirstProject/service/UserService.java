@@ -43,7 +43,7 @@ public class UserService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    public String signIn(UserDTO userDTO) {
+    public String signIn(final UserDTO userDTO) {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userDTO.getUsername(), userDTO.getPassword()));
             User user = userRepository.findOneByUsername(userDTO.getUsername());
@@ -53,7 +53,7 @@ public class UserService {
         }
     }
 
-    public String signUp(UserDTO userDTO) {
+    public String signUpUser(final UserDTO userDTO) {
 
         if (!userRepository.existsByUsername(userDTO.getUsername())) {
             User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
@@ -68,7 +68,22 @@ public class UserService {
         }
     }
 
-    public User updateUser(User user, UserUpdateDTO userUpdateDTO) {
+    public String signUpAdmin(final UserDTO userDTO) {
+
+        if (!userRepository.existsByUsername(userDTO.getUsername())) {
+            User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
+
+            user.setRoles(Collections.singleton(Role.ADMIN));
+
+            userRepository.save(user);
+
+            return jwtTokenProvider.createToken(user);
+        } else {
+            throw new CustomException("Username is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+    }
+
+    public User updateAccount(final User user, final UserUpdateDTO userUpdateDTO) {
 
         Set<Language> language = userUpdateDTO.getLanguages();
 
@@ -82,13 +97,12 @@ public class UserService {
         user.setAge(userUpdateDTO.getAge());
         user.setLanguages(userUpdateDTO.getLanguages());
 
-        return userRepository.save(user);
+        return userRepository.saveAndFlush(user);
     }
 
-    public User findOneByUsername(String username) {
+    public User findOneByUsername(final String username) {
 
         User user = userRepository.findOneByUsername(username);
-
         if (user == null) {
             throw new UsernameNotFoundException("User with name: " + username + " not found");
         }
@@ -96,8 +110,12 @@ public class UserService {
         return user;
     }
 
-    public void delete(User user) {
+    public void delete(final User user) {
         userRepository.delete(user);
+    }
+
+    public void deleteId(User user) {
+        userRepository.deleteById(user.getId());
     }
 
     public User editUser(User user) {

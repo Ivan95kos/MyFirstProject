@@ -15,4 +15,6 @@ public class UserDTO {
     @NotNull
     @Size(min = 1, max = 40)
     private String password;
+
+
 }

@@ -4,16 +4,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @Entity
-public class User implements Serializable {
-
-
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,6 +54,4 @@ public class User implements Serializable {
         this.username = username;
         this.password = password;
     }
-
-
 }

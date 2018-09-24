@@ -5,8 +5,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -20,8 +18,5 @@ public class Language {
     @NonNull
     @Column(name = "language_of_communication")
     private String languageOfCommunication;
-
-    @ManyToMany(mappedBy = "languages")
-    private Set<User> users = new HashSet<>();
 
 }

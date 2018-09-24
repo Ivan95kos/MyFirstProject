@@ -37,7 +37,7 @@ public class UserController {
             @ApiResponse(code = 400, message = "Something went wrong"), //
             @ApiResponse(code = 422, message = "Invalid username/password supplied")})
     @PostMapping("/login")
-    public ResponseEntity<Map.Entry<String, String>> signIn(@RequestBody @Validated UserDTO userDTO) {
+    public ResponseEntity<Map.Entry<String, String>> signIn(@RequestBody @Validated final UserDTO userDTO) {
 
         String token = userService.signIn(userDTO);
 
@@ -56,9 +56,9 @@ public class UserController {
             @ApiResponse(code = 422, message = "Username is already in use"), //
             @ApiResponse(code = 500, message = "Expired or invalid JWT token")})
     @PostMapping("/registration")
-    public ResponseEntity<Map.Entry<String, String>> signUp(@RequestBody @Validated UserDTO userDTO) {
+    public ResponseEntity<Map.Entry<String, String>> signUp(@RequestBody @Validated final UserDTO userDTO) {
 
-        String token = userService.signUp(userDTO);
+        String token = userService.signUpUser(userDTO);
 
         MultiValueMap<String, String> headers = new HttpHeaders();
 
@@ -75,15 +75,21 @@ public class UserController {
             @ApiResponse(code = 404, message = "The user doesn't exist"), //
             @ApiResponse(code = 500, message = "Expired or invalid JWT token")})
     @PatchMapping("/myself")
-    private String updateUser(@RequestBody @Validated UserUpdateDTO userUpdateDTO, Authentication authentication) {
+    public String updateAccount(@RequestBody @Validated final UserUpdateDTO userUpdateDTO, final Authentication authentication) {
 
         User user = userService.findOneByUsername(authentication.getName());
 
-        System.out.println(user.toString());
-
-        userService.updateUser(user, userUpdateDTO);
+        userService.updateAccount(user, userUpdateDTO);
 
         return "successfully";
+    }
+
+    @GetMapping("/me")
+    public User whoAmI(final Authentication authentication) {
+
+        User user = userService.findOneByUsername(authentication.getName());
+
+        return user;
     }
 
 }
