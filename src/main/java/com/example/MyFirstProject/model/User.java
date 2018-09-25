@@ -4,13 +4,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @Entity
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = 8284358871126548382L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
