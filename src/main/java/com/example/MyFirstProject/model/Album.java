@@ -28,5 +28,5 @@ public class Album {
     private Set<Artist> artists = new HashSet<>();
 
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Music> music;
+    private Set<MusicMetaDate> musicMetaDates;
 }

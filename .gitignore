@@ -19,6 +19,7 @@
 *.class
 *.jar
 target
+uploads
 .mvn/wrapper
 
 ### NetBeans ###

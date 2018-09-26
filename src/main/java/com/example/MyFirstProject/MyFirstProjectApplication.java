@@ -1,12 +1,18 @@
 package com.example.MyFirstProject;
 
+import com.example.MyFirstProject.property.FileStorageProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 //@SpringBootApplication(exclude = SecurityAutoConfiguration.class)
+
 @SpringBootApplication
+@EnableConfigurationProperties({
+        FileStorageProperties.class
+})
 public class MyFirstProjectApplication {
 
 //    @Bean

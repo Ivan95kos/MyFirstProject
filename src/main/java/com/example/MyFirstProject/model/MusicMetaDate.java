@@ -4,19 +4,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @Entity
-public class File {
+public class MusicMetaDate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private String header;
+    @Column(name = "name_music")
+    private String nameMusic;
 
     @Column
     private String title;
@@ -28,19 +27,22 @@ public class File {
     private String album;
 
     @Column
-    private Integer year;
+    private String year;
 
     @Column
     private String comment;
 
     @Column
-    private Integer track;
+    private String track;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column
+    private String genre;
 
-    @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Music> music;
+//    @ManyToOne
+//    @JoinColumn(name = "file_id")
+//    private MyFile file;
 
+//    @ManyToOne
+//    @JoinColumn(name = "album_id")
+//    private Album album;
 }
