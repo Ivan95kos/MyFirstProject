@@ -1,6 +1,7 @@
 package com.example.MyFirstProject.controller;
 
 
+import com.example.MyFirstProject.model.MusicMetaDate;
 import com.example.MyFirstProject.payload.UploadFileResponse;
 import com.example.MyFirstProject.service.FileStorageService;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/file")
+@RequestMapping("/files")
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
@@ -76,8 +77,8 @@ public class FileController {
                 .body(resource);
     }
 
-    @GetMapping("/{fileName}")
-    public Set<String> search(@PathVariable String fileName) {
+    @GetMapping("/search")
+    public Set<MusicMetaDate> search(@RequestParam("fileName") String fileName) {
         return fileStorageService.findFile(fileName);
     }
 }

@@ -6,8 +6,8 @@ import com.example.MyFirstProject.model.MusicMetaDate;
 import com.example.MyFirstProject.model.MyFile;
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.property.FileStorageProperties;
-import com.example.MyFirstProject.repository.FileRepository;
 import com.example.MyFirstProject.repository.MusicMetaDateRepository;
+import com.example.MyFirstProject.repository.MyFileRepository;
 import com.example.MyFirstProject.repository.UserRepository;
 import com.mpatric.mp3agic.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
 public class FileStorageService {
 
     @Autowired
-    private FileRepository fileRepository;
+    private MyFileRepository myFileRepository;
 
     private final Path fileStorageLocation;
 
@@ -59,13 +60,8 @@ public class FileStorageService {
         User user = userRepository.findOneByUsername(username);
 
         myFile.setLocalAddress(location);
+//        System.out.println("I here ");
         myFile.setUser(user);
-
-        if (file.getContentType().equals("audio/mpeg")) {
-            myFile.setMusicMetaDate(saveMetaDate(fileName, location));
-        }
-
-        fileRepository.save(myFile);
 
         try {
             // Check if the file's name contains invalid characters
@@ -76,6 +72,16 @@ public class FileStorageService {
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            if (file.getContentType().equals("audio/mpeg")) {
+                myFile.setMusicMetaDate(saveMetaDate(fileName, location));
+            }
+
+            myFileRepository.save(myFile);
+
+            user.getFiles().add(myFile);
+
+            userRepository.saveAndFlush(user);
 
             return fileName;
         } catch (IOException ex) {
@@ -97,19 +103,40 @@ public class FileStorageService {
         }
     }
 
-    public Set<String> findFile(String fileName) {
+    public Set<MusicMetaDate> findFile(String fileName) {
 
         Iterable<MusicMetaDate> musicMetaDates = musicMetaDateRepository.findAll();
 
-        Set<String> found = new HashSet<>();
+        Set<MusicMetaDate> found = new HashSet<>();
 
         for (MusicMetaDate musicMetaDate : musicMetaDates) {
             if (musicMetaDate.getNameMusic().contains(fileName)) {
-                found.add(musicMetaDate.getNameMusic());
+                found.add(musicMetaDate);
             }
         }
 
         return found;
+    }
+
+    public MusicMetaDate findUserFile(Long idUser, Long idFile) {
+
+        List<MyFile> listIdMusics = myFileRepository.findByUserId(idUser);
+
+        for (MyFile myFile : listIdMusics) {
+            if (myFile.getMusicMetaDate().getId().equals(idFile)) {
+                return myFile.getMusicMetaDate();
+            }
+        }
+
+//        if (listIdMusics.size()>idFile) {
+//            int idFiles = idFile.intValue();
+//
+//            MyFile myFile = listIdMusics.get(idFiles);
+//
+//            return myFile.getMusicMetaDate();
+//        }
+
+        return new MusicMetaDate();
     }
 
     public MusicMetaDate saveMetaDate(String fileName, String location) {

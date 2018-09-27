@@ -1,14 +1,19 @@
 package com.example.MyFirstProject.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
+@ToString
 @Entity
 public class User {
 
@@ -46,6 +51,11 @@ public class User {
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Column(name = "files")
+    private Set<MyFile> files = new HashSet<>();
 
     public User(String username, String password) {
         this.username = username;

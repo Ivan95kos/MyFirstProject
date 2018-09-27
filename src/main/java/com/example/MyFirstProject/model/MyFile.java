@@ -1,28 +1,30 @@
 package com.example.MyFirstProject.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.GenericGenerator;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 
-@Data
+@Setter
+@Getter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString
 @Entity
 public class MyFile {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "uuid2")
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column
     private String localAddress;
 
+    @JsonBackReference
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @OneToOne

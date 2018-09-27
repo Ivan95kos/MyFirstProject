@@ -7,6 +7,7 @@ import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.UserDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.repository.LanguageRepository;
+import com.example.MyFirstProject.repository.MyFileRepository;
 import com.example.MyFirstProject.repository.UserRepository;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class UserService {
 
     @Autowired
     private LanguageRepository languageRepository;
+
+    @Autowired
+    private MyFileRepository myFileRepository;
 
 //    @Autowired
 //    private RoleService roleService;
@@ -125,6 +129,5 @@ public class UserService {
     public List<User> getAll() {
         return userRepository.findAll();
     }
-
 
 }
