@@ -4,9 +4,11 @@ import com.example.MyFirstProject.exception.FileStorageException;
 import com.example.MyFirstProject.exception.MyFileNotFoundException;
 import com.example.MyFirstProject.model.MusicMetaDate;
 import com.example.MyFirstProject.model.MyFile;
+import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.property.FileStorageProperties;
 import com.example.MyFirstProject.repository.FileRepository;
 import com.example.MyFirstProject.repository.MusicMetaDateRepository;
+import com.example.MyFirstProject.repository.UserRepository;
 import com.mpatric.mp3agic.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -15,23 +17,27 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
     @Autowired
     private FileRepository fileRepository;
+
+    private final Path fileStorageLocation;
+
     @Autowired
     private MusicMetaDateRepository musicMetaDateRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public FileStorageService(final FileStorageProperties fileStorageProperties) {
@@ -44,11 +50,22 @@ public class FileStorageService {
         }
     }
 
-    public String storeFile(final MultipartFile file) {
+    public String storeFile(final MultipartFile file, String username) {
         // Normalize file name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String location = fileStorageLocation.toFile().getAbsolutePath() + "/" + fileName;
 
         MyFile myFile = new MyFile();
+        User user = userRepository.findOneByUsername(username);
+
+        myFile.setLocalAddress(location);
+        myFile.setUser(user);
+
+        if (file.getContentType().equals("audio/mpeg")) {
+            myFile.setMusicMetaDate(saveMetaDate(fileName, location));
+        }
+
+        fileRepository.save(myFile);
 
         try {
             // Check if the file's name contains invalid characters
@@ -56,29 +73,15 @@ public class FileStorageService {
                 throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
             }
 
-//            MyFile dbMyFile = new MyFile(fileName, file.getContentType(), file.getBytes());
-
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            if (file.getContentType().equals("audio/mpeg")) {
-                saveMetaDate(fileName);
-            }
-
-            myFile.setLocalAddress(fileName);
-            fileRepository.save(myFile);
-
             return fileName;
-        } catch (IOException | InvalidDataException | UnsupportedTagException ex) {
+        } catch (IOException ex) {
             throw new FileStorageException("Could not store file " + fileName + ". Please try again!", ex);
         }
     }
-
-//    public MyFile getFile(String fileId) {
-//        return fileRepository.findById(fileId)
-//                .orElseThrow(() -> new MyFileNotFoundException("MyFile not found with id " + fileId));
-//    }
 
     public Resource loadFileAsResource(String fileName) {
         try {
@@ -94,21 +97,32 @@ public class FileStorageService {
         }
     }
 
-    public File multipartToFile(MultipartFile file) throws IllegalStateException, IOException {
-        File convFile = new File(file.getOriginalFilename());
-        convFile.createNewFile();
-        FileOutputStream fos = new FileOutputStream(convFile);
-        fos.write(file.getBytes());
-        fos.close();
-        return convFile;
+    public Set<String> findFile(String fileName) {
+
+        Iterable<MusicMetaDate> musicMetaDates = musicMetaDateRepository.findAll();
+
+        Set<String> found = new HashSet<>();
+
+        for (MusicMetaDate musicMetaDate : musicMetaDates) {
+            if (musicMetaDate.getNameMusic().contains(fileName)) {
+                found.add(musicMetaDate.getNameMusic());
+            }
+        }
+
+        return found;
     }
 
-    public void saveMetaDate(String fileName) throws IOException, InvalidDataException, UnsupportedTagException {
+    public MusicMetaDate saveMetaDate(String fileName, String location) {
 
         MusicMetaDate musicMetaDate = new MusicMetaDate();
-//        musicMetaDate.setNameMusic(file.getOriginalFilename().substring(0,file.getOriginalFilename().length()- 4).trim());
+        musicMetaDate.setNameMusic(fileName.substring(0, fileName.length() - 4).trim());
 
-        Mp3File mp3file = new Mp3File(fileName);
+        Mp3File mp3file = null;
+        try {
+            mp3file = new Mp3File(location);
+        } catch (IOException | UnsupportedTagException | InvalidDataException e) {
+            e.getMessage();
+        }
 
         if (mp3file.hasId3v1Tag()) {
             ID3v1 id3v1Tag = mp3file.getId3v1Tag();
@@ -130,15 +144,8 @@ public class FileStorageService {
             musicMetaDate.setYear("Year: " + id3v2Tag.getYear());
             musicMetaDate.setGenre("Genre: " + id3v2Tag.getGenre() + " (" + id3v2Tag.getGenreDescription() + ")");
             musicMetaDate.setComment("Comment: " + id3v2Tag.getComment());
-//            System.out.println("Composer: " + id3v2Tag.getComposer());
-//            System.out.println("Publisher: " + id3v2Tag.getPublisher());
-//            System.out.println("Original artist: " + id3v2Tag.getOriginalArtist());
-//            System.out.println("Album artist: " + id3v2Tag.getAlbumArtist());
-//            System.out.println("Copyright: " + id3v2Tag.getCopyright());
-//            System.out.println("URL: " + id3v2Tag.getUrl());
-//            System.out.println("Encoder: " + id3v2Tag.getEncoder());
         }
 
-        musicMetaDateRepository.save(musicMetaDate);
+        return musicMetaDateRepository.save(musicMetaDate);
     }
 }
