@@ -84,6 +84,9 @@ public class UserController {
         return "successfully";
     }
 
+    @ApiResponses(value = {//
+            @ApiResponse(code = 400, message = "Something went wrong"), //
+            @ApiResponse(code = 422, message = "Invalid username/password supplied")})
     @GetMapping("/me")
     public User whoAmI(final Authentication authentication) {
 

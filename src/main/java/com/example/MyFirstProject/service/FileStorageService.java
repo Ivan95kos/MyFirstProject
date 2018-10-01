@@ -25,10 +25,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
 public class FileStorageService {
+
+    private final static String AUDIO_EXTENSIONS = "audio/mpeg";
+    private final static String EMPTY_LINE = "";
 
     @Autowired
     private MyFileRepository myFileRepository;
@@ -51,7 +55,7 @@ public class FileStorageService {
         }
     }
 
-    public String storeFile(final MultipartFile file, String username) {
+    public String storeFile(final MultipartFile file, final String username) {
         // Normalize file name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         String location = fileStorageLocation.toFile().getAbsolutePath() + "/" + fileName;
@@ -60,7 +64,6 @@ public class FileStorageService {
         User user = userRepository.findOneByUsername(username);
 
         myFile.setLocalAddress(location);
-//        System.out.println("I here ");
         myFile.setUser(user);
 
         try {
@@ -73,23 +76,35 @@ public class FileStorageService {
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            if (file.getContentType().equals("audio/mpeg")) {
-                myFile.setMusicMetaDate(saveMetaDate(fileName, location));
-            }
-
-            myFileRepository.save(myFile);
-
-            user.getFiles().add(myFile);
-
-            userRepository.saveAndFlush(user);
-
-            return fileName;
         } catch (IOException ex) {
             throw new FileStorageException("Could not store file " + fileName + ". Please try again!", ex);
         }
+
+//        if (!myFileRepository.existsByLocalAddress(location)) {
+
+        if (Objects.equals(file.getContentType(), AUDIO_EXTENSIONS)) {
+                myFile.setMusicMetaDate(saveMetaDate(fileName, location));
+            }
+            myFileRepository.save(myFile);
+
+//        } else {
+//            MyFile saveFile = myFileRepository.findByLocalAddress(location);
+//
+//            MusicMetaDate musicMetaDate = saveFile.getMusicMetaDate();
+//
+//            myFile.setMusicMetaDate(musicMetaDate);
+//
+//            myFileRepository.save(myFile);
+//        }
+
+        user.getFiles().add(myFile);
+
+        userRepository.saveAndFlush(user);
+
+        return fileName;
     }
 
-    public Resource loadFileAsResource(String fileName) {
+    public Resource loadFileAsResource(final String fileName) {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
@@ -103,11 +118,16 @@ public class FileStorageService {
         }
     }
 
-    public Set<MusicMetaDate> findFile(String fileName) {
+    public Set<MusicMetaDate> findFile(final String fileName) {
 
         Iterable<MusicMetaDate> musicMetaDates = musicMetaDateRepository.findAll();
 
         Set<MusicMetaDate> found = new HashSet<>();
+
+        if (EMPTY_LINE.equals(fileName)) {
+            found.addAll(musicMetaDateRepository.findAll());
+            return found;
+        }
 
         for (MusicMetaDate musicMetaDate : musicMetaDates) {
             if (musicMetaDate.getNameMusic().contains(fileName)) {
@@ -118,7 +138,7 @@ public class FileStorageService {
         return found;
     }
 
-    public MusicMetaDate findUserFile(Long idUser, Long idFile) {
+    public MusicMetaDate findUserFile(final Long idUser, final Long idFile) {
 
         List<MyFile> listIdMusics = myFileRepository.findByUserId(idUser);
 
@@ -139,7 +159,7 @@ public class FileStorageService {
         return new MusicMetaDate();
     }
 
-    public MusicMetaDate saveMetaDate(String fileName, String location) {
+    public MusicMetaDate saveMetaDate(final String fileName, final String location) {
 
         MusicMetaDate musicMetaDate = new MusicMetaDate();
         musicMetaDate.setNameMusic(fileName.substring(0, fileName.length() - 4).trim());
@@ -151,26 +171,26 @@ public class FileStorageService {
             e.getMessage();
         }
 
-        if (mp3file.hasId3v1Tag()) {
+        if (Objects.requireNonNull(mp3file).hasId3v1Tag()) {
             ID3v1 id3v1Tag = mp3file.getId3v1Tag();
-            musicMetaDate.setTrack("Track: " + id3v1Tag.getTrack());
-            musicMetaDate.setArtist("Artist: " + id3v1Tag.getArtist());
-            musicMetaDate.setTitle("Title: " + id3v1Tag.getTitle());
-            musicMetaDate.setAlbum("Album: " + id3v1Tag.getAlbum());
-            musicMetaDate.setYear("Year: " + id3v1Tag.getYear());
-            musicMetaDate.setGenre("Genre: " + id3v1Tag.getGenre() + " (" + id3v1Tag.getGenreDescription() + ")");
-            musicMetaDate.setComment("Comment: " + id3v1Tag.getComment());
+            musicMetaDate.setTrack(id3v1Tag.getTrack());
+            musicMetaDate.setArtist(id3v1Tag.getArtist());
+            musicMetaDate.setTitle(id3v1Tag.getTitle());
+            musicMetaDate.setAlbum(id3v1Tag.getAlbum());
+            musicMetaDate.setYear(id3v1Tag.getYear());
+            musicMetaDate.setGenre(id3v1Tag.getGenre() + " (" + id3v1Tag.getGenreDescription() + ")");
+            musicMetaDate.setComment(id3v1Tag.getComment());
         }
 
         if (mp3file.hasId3v2Tag()) {
             ID3v2 id3v2Tag = mp3file.getId3v2Tag();
-            musicMetaDate.setTrack("Track: " + id3v2Tag.getTrack());
-            musicMetaDate.setArtist("Artist: " + id3v2Tag.getArtist());
-            musicMetaDate.setTitle("Title: " + id3v2Tag.getTitle());
-            musicMetaDate.setAlbum("Album: " + id3v2Tag.getAlbum());
-            musicMetaDate.setYear("Year: " + id3v2Tag.getYear());
-            musicMetaDate.setGenre("Genre: " + id3v2Tag.getGenre() + " (" + id3v2Tag.getGenreDescription() + ")");
-            musicMetaDate.setComment("Comment: " + id3v2Tag.getComment());
+            musicMetaDate.setTrack(id3v2Tag.getTrack());
+            musicMetaDate.setArtist(id3v2Tag.getArtist());
+            musicMetaDate.setTitle(id3v2Tag.getTitle());
+            musicMetaDate.setAlbum(id3v2Tag.getAlbum());
+            musicMetaDate.setYear(id3v2Tag.getYear());
+            musicMetaDate.setGenre(id3v2Tag.getGenre() + " (" + id3v2Tag.getGenreDescription() + ")");
+            musicMetaDate.setComment(id3v2Tag.getComment());
         }
 
         return musicMetaDateRepository.save(musicMetaDate);

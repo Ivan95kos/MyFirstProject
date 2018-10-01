@@ -12,8 +12,13 @@ public class UserFilesController {
     @Autowired
     private FileStorageService fileStorageService;
 
-    @GetMapping("{idUser}/files")
+    @GetMapping("{idUser}/files/search")
     public MusicMetaDate findUserFile(@PathVariable Long idUser, @RequestParam("id") Long idFile) {
+        return fileStorageService.findUserFile(idUser, idFile);
+    }
+
+    @GetMapping("{idUser}/files/{idFile}")
+    public MusicMetaDate findUserFilePart(@PathVariable Long idUser, @PathVariable Long idFile) {
         return fileStorageService.findUserFile(idUser, idFile);
     }
 }
