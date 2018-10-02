@@ -4,10 +4,13 @@ package com.example.MyFirstProject.controller;
 import com.example.MyFirstProject.model.MusicMetaDate;
 import com.example.MyFirstProject.payload.UploadFileResponse;
 import com.example.MyFirstProject.service.FileStorageService;
+import com.example.MyFirstProject.service.MusicMetaDateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,9 @@ import java.util.stream.Collectors;
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+
+    @Autowired
+    private MusicMetaDateService musicMetaDateService;
 
     @Autowired
     private FileStorageService fileStorageService;
@@ -80,5 +86,10 @@ public class FileController {
     @GetMapping("/search")
     public Set<MusicMetaDate> search(@RequestParam("fileName") String fileName) {
         return fileStorageService.findFile(fileName);
+    }
+
+    @GetMapping
+    public Page<MusicMetaDate> getMusicMetaDate(Pageable pageable){
+        return musicMetaDateService.getAll(pageable);
     }
 }

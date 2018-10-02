@@ -38,7 +38,4 @@ public class MusicMetaDate {
     @Column
     private String genre;
 
-//    @ManyToOne
-//    @JoinColumn(name = "album_id")
-//    private Album album;
 }
