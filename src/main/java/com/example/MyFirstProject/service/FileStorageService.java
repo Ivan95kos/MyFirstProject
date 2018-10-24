@@ -8,7 +8,6 @@ import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.property.FileStorageProperties;
 import com.example.MyFirstProject.repository.MusicMetaDateRepository;
 import com.example.MyFirstProject.repository.MyFileRepository;
-import com.example.MyFirstProject.repository.UserRepository;
 import com.mpatric.mp3agic.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -42,7 +41,7 @@ public class FileStorageService {
     @Autowired
     private MusicMetaDateRepository musicMetaDateRepository;
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     public FileStorageService(final FileStorageProperties fileStorageProperties) {
@@ -61,7 +60,7 @@ public class FileStorageService {
         String location = fileStorageLocation.toFile().getAbsolutePath() + "/" + fileName;
 
         MyFile myFile = new MyFile();
-        User user = userRepository.findOneByUsername(username);
+        User user = userService.findOneByUsernameOrEmail(username);
 
         myFile.setLocalAddress(location);
         myFile.setUser(user);
@@ -99,7 +98,7 @@ public class FileStorageService {
 
         user.getFiles().add(myFile);
 
-        userRepository.saveAndFlush(user);
+        userService.saveAndFlush(user);
 
         return fileName;
     }

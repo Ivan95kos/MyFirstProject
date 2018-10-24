@@ -4,7 +4,8 @@ import com.example.MyFirstProject.exception.CustomException;
 import com.example.MyFirstProject.model.Language;
 import com.example.MyFirstProject.model.Role;
 import com.example.MyFirstProject.model.User;
-import com.example.MyFirstProject.model.dto.UserDTO;
+import com.example.MyFirstProject.model.dto.SingInDTO;
+import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.repository.LanguageRepository;
 import com.example.MyFirstProject.repository.MyFileRepository;
@@ -12,6 +13,7 @@ import com.example.MyFirstProject.repository.UserRepository;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -47,20 +49,26 @@ public class UserService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    public String signIn(final UserDTO userDTO) {
+    public String signIn(final SingInDTO singInDTO) {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userDTO.getUsername(), userDTO.getPassword()));
-            User user = userRepository.findOneByUsername(userDTO.getUsername());
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(singInDTO.getUsernameOrEmail(), singInDTO.getPassword()));
+
+            User user = userRepository.findOneByUsernameOrEmail(singInDTO.getUsernameOrEmail(), singInDTO.getUsernameOrEmail());
+
             return jwtTokenProvider.createToken(user);
+        } catch (AccountStatusException e) {
+            throw new CustomException("Account not activated. Verify email", HttpStatus.UNPROCESSABLE_ENTITY);
         } catch (AuthenticationException e) {
             throw new CustomException("Invalid username/password supplied", HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
-    public String signUpUser(final UserDTO userDTO) {
+    public String signUpUser(final SingUpDTO singUpDTO) {
 
-        if (!userRepository.existsByUsername(userDTO.getUsername())) {
-            User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
+        if (!userRepository.existsByUsernameOrEmail(singUpDTO.getUsername(), singUpDTO.getEmail())) {
+            User user = new User(singUpDTO.getUsername(), singUpDTO.getEmail(), passwordEncoder.encode(singUpDTO.getPassword()));
+
+            user.setEnabled(false);
 
             user.setRoles(Collections.singleton(Role.USER));
 
@@ -72,10 +80,10 @@ public class UserService {
         }
     }
 
-    public String signUpAdmin(final UserDTO userDTO) {
+    public String signUpAdmin(final SingUpDTO singUpDTO) {
 
-        if (!userRepository.existsByUsername(userDTO.getUsername())) {
-            User user = new User(userDTO.getUsername(), passwordEncoder.encode(userDTO.getPassword()));
+        if (!userRepository.existsByUsernameOrEmail(singUpDTO.getUsername(), singUpDTO.getEmail())) {
+            User user = new User(singUpDTO.getUsername(), singUpDTO.getEmail(), passwordEncoder.encode(singUpDTO.getPassword()));
 
             user.setRoles(Collections.singleton(Role.ADMIN));
 
@@ -104,11 +112,11 @@ public class UserService {
         return userRepository.saveAndFlush(user);
     }
 
-    public User findOneByUsername(final String username) {
+    public User findOneByUsernameOrEmail(final String usernameOrEmail) {
 
-        User user = userRepository.findOneByUsername(username);
+        User user = userRepository.findOneByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
         if (user == null) {
-            throw new UsernameNotFoundException("User with name: " + username + " not found");
+            throw new UsernameNotFoundException("User with nameOrEmail: " + usernameOrEmail + " not found");
         }
 
         return user;
@@ -122,7 +130,7 @@ public class UserService {
         userRepository.deleteById(user.getId());
     }
 
-    public User editUser(User user) {
+    public User saveAndFlush(User user) {
         return userRepository.saveAndFlush(user);
     }
 

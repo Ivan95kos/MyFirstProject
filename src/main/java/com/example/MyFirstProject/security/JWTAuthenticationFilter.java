@@ -1,7 +1,7 @@
 //package com.example.MyFirstProject.security;
 //
 //import com.auth0.jwt.JWT;
-//import com.example.MyFirstProject.model.dto.UserDTO;
+//import com.example.MyFirstProject.model.dto.SingUpDTO;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 //import org.springframework.security.authentication.AuthenticationManager;
 //import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,8 +31,8 @@
 //    public Authentication attemptAuthentication(HttpServletRequest req,
 //                                                HttpServletResponse res) throws AuthenticationException {
 //        try {
-//            UserDTO creds = new ObjectMapper()
-//                    .readValue(req.getInputStream(), UserDTO.class);
+//            SingUpDTO creds = new ObjectMapper()
+//                    .readValue(req.getInputStream(), SingUpDTO.class);
 //            return authenticationManager.authenticate(
 //                    new UsernamePasswordAuthenticationToken(
 //                            creds.getUsername(),

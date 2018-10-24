@@ -1,7 +1,7 @@
 package com.example.MyFirstProject.controller;
 
 import com.example.MyFirstProject.model.User;
-import com.example.MyFirstProject.model.dto.UserDTO;
+import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.repository.LanguageRepository;
 import com.example.MyFirstProject.service.UserService;
 import io.swagger.annotations.ApiResponse;
@@ -36,9 +36,9 @@ public class AdminController {
             @ApiResponse(code = 422, message = "Username is already in use"), //
             @ApiResponse(code = 500, message = "Expired or invalid JWT token")})
     @PostMapping("/registration")
-    public ResponseEntity<Map.Entry<String, String>> signUp(@RequestBody @Validated final UserDTO userDTO) {
+    public ResponseEntity<Map.Entry<String, String>> signUp(@RequestBody @Validated final SingUpDTO singUpDTO) {
 
-        String token = userService.signUpAdmin(userDTO);
+        String token = userService.signUpAdmin(singUpDTO);
 
         MultiValueMap<String, String> headers = new HttpHeaders();
 
@@ -51,7 +51,7 @@ public class AdminController {
 
     @DeleteMapping("/users/{username}")
     public String deleteAccount(@PathVariable String username) {
-        User user = userService.findOneByUsername(username);
+        User user = userService.findOneByUsernameOrEmail(username);
         userService.delete(user);
         return username;
     }
@@ -59,7 +59,7 @@ public class AdminController {
     @GetMapping("/users/{username}")
     public User search(@PathVariable String username) {
 
-        User user = userService.findOneByUsername(username);
+        User user = userService.findOneByUsernameOrEmail(username);
 
         return user;
     }

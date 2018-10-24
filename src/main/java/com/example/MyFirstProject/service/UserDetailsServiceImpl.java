@@ -15,24 +15,24 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findOneByUsername(username);
-//        Hibernate.initialize(user.getRoles());
-//        System.out.println(user.getRoles());
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        User user = userRepository.findOneByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+//        Hibernate.initialize(user.getPassword());
+//        System.out.println(user.getPassword());
         if (user == null) {
-            throw new UsernameNotFoundException("User with name: " + username + " not found");
+            throw new UsernameNotFoundException("User with name: " + usernameOrEmail + " not found");
         }
 
 //        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), true, true, true, true,
 //                new ArrayList<>());
         return org.springframework.security.core.userdetails.User//
-                .withUsername(username)//
+                .withUsername(usernameOrEmail)//
                 .password(user.getPassword())//
                 .authorities(user.getRoles())//
                 .accountExpired(false)//
                 .accountLocked(false)//
                 .credentialsExpired(false)//
-                .disabled(false)//
+                .disabled(!user.isEnabled())//
                 .build();
     }
 }

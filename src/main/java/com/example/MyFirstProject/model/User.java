@@ -39,6 +39,9 @@ public class User {
     @Column
     private String password;
 
+    @Column
+    private boolean enabled;
+
     @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
     @JoinTable(
             name = "lang_x_user",
@@ -57,8 +60,9 @@ public class User {
     @Column(name = "files")
     private Set<MyFile> files = new HashSet<>();
 
-    public User(String username, String password) {
+    public User(String username, String email,String password) {
         this.username = username;
+        this.email = email;
         this.password = password;
     }
 }

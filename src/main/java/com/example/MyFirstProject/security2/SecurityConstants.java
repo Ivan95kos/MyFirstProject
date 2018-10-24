@@ -8,5 +8,6 @@ public class SecurityConstants {
     public static final String SIGN_UP_USER = "/users/registration";
     public static final String SIGN_UP_ADMIN = "/admin/registration";
     public static final String SIGN_IN_URL = "/users/login";
+    public static final String ACTIVATE_URL = "/users/activate";
 
 }
