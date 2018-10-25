@@ -85,6 +85,8 @@ public class UserService {
         if (!userRepository.existsByUsernameOrEmail(singUpDTO.getUsername(), singUpDTO.getEmail())) {
             User user = new User(singUpDTO.getUsername(), singUpDTO.getEmail(), passwordEncoder.encode(singUpDTO.getPassword()));
 
+            user.setEnabled(false);
+
             user.setRoles(Collections.singleton(Role.ADMIN));
 
             userRepository.save(user);

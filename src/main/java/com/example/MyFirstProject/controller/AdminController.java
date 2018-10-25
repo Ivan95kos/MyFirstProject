@@ -2,23 +2,16 @@ package com.example.MyFirstProject.controller;
 
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.SingUpDTO;
-import com.example.MyFirstProject.repository.LanguageRepository;
+import com.example.MyFirstProject.service.EmailService;
 import com.example.MyFirstProject.service.UserService;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.AbstractMap;
-import java.util.Map;
-
-import static com.example.MyFirstProject.security2.SecurityConstants.HEADER_STRING;
-import static com.example.MyFirstProject.security2.SecurityConstants.TOKEN_PREFIX;
+import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/admin")
@@ -28,25 +21,24 @@ public class AdminController {
     private UserService userService;
 
     @Autowired
-    private LanguageRepository languageRepository;
+    private EmailService emailService;
 
-    @ApiResponses(value = {//
-            @ApiResponse(code = 400, message = "Something went wrong"), //
-            @ApiResponse(code = 403, message = "Access denied"), //
-            @ApiResponse(code = 422, message = "Username is already in use"), //
-            @ApiResponse(code = 500, message = "Expired or invalid JWT token")})
     @PostMapping("/registration")
-    public ResponseEntity<Map.Entry<String, String>> signUp(@RequestBody @Validated final SingUpDTO singUpDTO) {
+    public ResponseEntity<String> signUp(@RequestBody @Validated final SingUpDTO singUpDTO, HttpServletRequest request) {
 
         String token = userService.signUpAdmin(singUpDTO);
 
-        MultiValueMap<String, String> headers = new HttpHeaders();
+        String appUrl = request.getScheme() + "://" + request.getServerName();
 
-        headers.add(HEADER_STRING, TOKEN_PREFIX + token);
+        SimpleMailMessage registrationEmail = new SimpleMailMessage();
+        registrationEmail.setTo(singUpDTO.getEmail());
+        registrationEmail.setSubject("Registration Confirmation");
+        registrationEmail.setText("To confirm your e-mail address, please click the link below:\n"
+                + appUrl + "/users/activate?token=" + token);
 
-        Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
+        emailService.sendEmail(registrationEmail);
 
-        return new ResponseEntity<>(tok, headers, HttpStatus.OK);
+        return new ResponseEntity<>("{success:true}", HttpStatus.OK) ;
     }
 
     @DeleteMapping("/users/{username}")
