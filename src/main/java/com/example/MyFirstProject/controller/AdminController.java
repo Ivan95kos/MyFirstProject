@@ -51,8 +51,7 @@ public class AdminController {
     @GetMapping("/users/{username}")
     public User search(@PathVariable String username) {
 
-        User user = userService.findOneByUsernameOrEmail(username);
+        return userService.findOneByUsernameOrEmail(username);
 
-        return user;
     }
 }
