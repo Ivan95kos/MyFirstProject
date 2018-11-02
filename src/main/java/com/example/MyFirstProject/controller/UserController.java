@@ -1,13 +1,17 @@
 package com.example.MyFirstProject.controller;
 
 import com.example.MyFirstProject.model.User;
+import com.example.MyFirstProject.model.dto.PasswordDTO;
 import com.example.MyFirstProject.model.dto.SingInDTO;
 import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
 import com.example.MyFirstProject.service.EmailService;
 import com.example.MyFirstProject.service.UserService;
+import com.example.MyFirstProject.util.GenericResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.AbstractMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.example.MyFirstProject.security2.SecurityConstants.HEADER_STRING;
 import static com.example.MyFirstProject.security2.SecurityConstants.TOKEN_PREFIX;
@@ -36,6 +42,12 @@ public class UserController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private MessageSource messages;
+
+    @Autowired
+    private Environment env;
 
 //    @ExceptionHandler({HttpClientErrorException.class})
 //    public String handleException() {
@@ -57,7 +69,7 @@ public class UserController {
     }
 
     @PostMapping("/registration")
-    public ResponseEntity<String> singUpUser(@RequestBody @Validated SingUpDTO singUpDTO, HttpServletRequest request){
+    public ResponseEntity<String> singUpUser(@RequestBody @Validated final SingUpDTO singUpDTO, final HttpServletRequest request){
 
         String token = userService.signUpUser(singUpDTO);
 
@@ -76,7 +88,7 @@ public class UserController {
     }
 
     @PostMapping("/activate")
-    public ResponseEntity<Map.Entry<String, String>> processConfirmationForm(@RequestParam("token") String token){
+    public ResponseEntity<Map.Entry<String, String>> processConfirmationForm(@RequestParam("token") final String token){
 
         User user = userService.findOneByUsernameOrEmail(jwtTokenProvider.getUsername(token));
 
@@ -108,6 +120,53 @@ public class UserController {
 
         return userService.findOneByUsernameOrEmail(authentication.getName());
 
+    }
+// переробити на гет запит  і окремо пост зробити
+
+    @PostMapping("/resetPassword")
+    public GenericResponse resetPassword(final HttpServletRequest request, @RequestParam("email") final String userEmail) {
+        final User user = userService.findUserByEmail(userEmail);
+        if (user != null) {
+            final String token = UUID.randomUUID().toString();
+            userService.createPasswordResetTokenForUser(user, token);
+            emailService.sendEmail(constructResetTokenEmail(getAppUrl(request), request.getLocale(), token, user));
+        }
+        return new GenericResponse(messages.getMessage("message.resetPasswordEmail", null, request.getLocale()));
+    }
+
+    @PostMapping("/savePassword")
+    public GenericResponse savePassword(Locale locale,
+                                        @RequestBody @Validated PasswordDTO passwordDto, @RequestParam("id") Long id, @RequestParam("token") String token) {
+
+        User user = userService.validatePasswordResetToken(id, token);
+
+        userService.changeUserPassword(user, passwordDto.getNewPassword());
+        return new GenericResponse(
+                messages.getMessage("message.resetPasswordSuc", null, locale));
+    }
+
+    // ============== NON-API ============
+
+    private SimpleMailMessage constructResetTokenEmail(final String contextPath, final Locale locale, final String token, final User user) {
+        final String url = contextPath + "/users/savePassword?id=" + user.getId() + "&token=" + token;
+        final String message = messages.getMessage("message.resetPassword", null, locale);
+        return constructEmail("Reset Password", message + " \r\n" + url, user);
+    }
+
+    private SimpleMailMessage constructEmail(String subject, String body, User user) {
+        final SimpleMailMessage email = new SimpleMailMessage();
+        email.setSubject(subject);
+        email.setText(body);
+        email.setTo(user.getEmail());
+        email.setFrom(env.getProperty("support.email"));
+        return email;
+    }
+
+    private String getAppUrl(HttpServletRequest request) {
+        String subject = "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+        System.out.println(subject);
+        System.out.println(request.getServerName() + "============" + request.getServerPort() + "===========" + request.getContextPath());
+        return subject;
     }
 
 }

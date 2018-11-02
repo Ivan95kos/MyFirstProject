@@ -2,6 +2,7 @@ package com.example.MyFirstProject.service;
 
 import com.example.MyFirstProject.exception.CustomException;
 import com.example.MyFirstProject.model.Language;
+import com.example.MyFirstProject.model.PasswordResetToken;
 import com.example.MyFirstProject.model.Role;
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.SingInDTO;
@@ -9,6 +10,7 @@ import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.repository.LanguageRepository;
 import com.example.MyFirstProject.repository.MyFileRepository;
+import com.example.MyFirstProject.repository.PasswordResetTokenRepository;
 import com.example.MyFirstProject.repository.UserRepository;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +42,9 @@ public class UserService {
 
     @Autowired
     private MyFileRepository myFileRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
 //    @Autowired
 //    private RoleService roleService;
@@ -140,4 +146,36 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public User findUserByEmail(String userEmail) {
+        return userRepository.findByEmail(userEmail);
+    }
+
+    public void createPasswordResetTokenForUser(final User user,final String token) {
+        final PasswordResetToken passwordResetToken = new PasswordResetToken(token, user);
+        passwordResetTokenRepository.save(passwordResetToken);
+    }
+
+    public void changeUserPassword(final User user, final String password){
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+    }
+
+    public User validatePasswordResetToken(long id, String token) {
+        PasswordResetToken passToken =
+                passwordResetTokenRepository.findByToken(token);
+        if ((passToken == null) || (passToken.getUser()
+                .getId() != id)) {
+            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        Calendar cal = Calendar.getInstance();
+        if ((passToken.getExpiryDate()
+                .getTime() - cal.getTime()
+                .getTime()) <= 0) {
+            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        return passToken.getUser();
+
+    }
 }
