@@ -134,6 +134,18 @@ public class UserController {
         return new GenericResponse(messages.getMessage("message.resetPasswordEmail", null, request.getLocale()));
     }
 
+    @GetMapping("/changePassword")
+    public String showChangePasswordPage(Locale locale, Model model,
+                                         @RequestParam("id") long id, @RequestParam("token") String token) {
+        String result = securityService.validatePasswordResetToken(id, token);
+        if (result != null) {
+            model.addAttribute("message",
+                    messages.getMessage("auth.message." + result, null, locale));
+            return "redirect:/login?lang=" + locale.getLanguage();
+        }
+        return "redirect:/updatePassword.html?lang=" + locale.getLanguage();
+    }
+
     @PostMapping("/savePassword")
     public GenericResponse savePassword(Locale locale,
                                         @RequestBody @Validated PasswordDTO passwordDto, @RequestParam("id") Long id, @RequestParam("token") String token) {
@@ -148,7 +160,7 @@ public class UserController {
     // ============== NON-API ============
 
     private SimpleMailMessage constructResetTokenEmail(final String contextPath, final Locale locale, final String token, final User user) {
-        final String url = contextPath + "/users/savePassword?id=" + user.getId() + "&token=" + token;
+        final String url = contextPath + "/users/changePassword?id=" + user.getId() + "&token=" + token;
         final String message = messages.getMessage("message.resetPassword", null, locale);
         return constructEmail("Reset Password", message + " \r\n" + url, user);
     }
