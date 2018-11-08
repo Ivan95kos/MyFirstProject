@@ -2,7 +2,6 @@ package com.example.MyFirstProject.service;
 
 import com.example.MyFirstProject.exception.CustomException;
 import com.example.MyFirstProject.model.Language;
-import com.example.MyFirstProject.model.PasswordResetToken;
 import com.example.MyFirstProject.model.Role;
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.SingInDTO;
@@ -10,7 +9,6 @@ import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.repository.LanguageRepository;
 import com.example.MyFirstProject.repository.MyFileRepository;
-import com.example.MyFirstProject.repository.PasswordResetTokenRepository;
 import com.example.MyFirstProject.repository.UserRepository;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +21,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -43,8 +40,8 @@ public class UserService {
     @Autowired
     private MyFileRepository myFileRepository;
 
-    @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
+//    @Autowired
+//    private PasswordResetTokenRepository passwordResetTokenRepository;
 
 //    @Autowired
 //    private RoleService roleService;
@@ -65,7 +62,7 @@ public class UserService {
         } catch (AccountStatusException e) {
             throw new CustomException("Account not activated. Verify email", HttpStatus.UNPROCESSABLE_ENTITY);
         } catch (AuthenticationException e) {
-            throw new CustomException("Invalid username/password supplied", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new CustomException("message.InvalidUsernameOrPassword", HttpStatus.NOT_FOUND);
         }
     }
 
@@ -82,7 +79,7 @@ public class UserService {
 
             return jwtTokenProvider.createToken(user);
         } else {
-            throw new CustomException("Username is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new CustomException("UsernameOrEmail is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -99,7 +96,7 @@ public class UserService {
 
             return jwtTokenProvider.createToken(user);
         } else {
-            throw new CustomException("Username is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
+            throw new CustomException("UsernameOrEmail is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
@@ -150,32 +147,34 @@ public class UserService {
         return userRepository.findByEmail(userEmail);
     }
 
-    public void createPasswordResetTokenForUser(final User user,final String token) {
-        final PasswordResetToken passwordResetToken = new PasswordResetToken(token, user);
-        passwordResetTokenRepository.save(passwordResetToken);
-    }
-
     public void changeUserPassword(final User user, final String password){
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
     }
 
-    public User validatePasswordResetToken(long id, String token) {
-        PasswordResetToken passToken =
-                passwordResetTokenRepository.findByToken(token);
-        if ((passToken == null) || (passToken.getUser()
-                .getId() != id)) {
-            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
 
-        Calendar cal = Calendar.getInstance();
-        if ((passToken.getExpiryDate()
-                .getTime() - cal.getTime()
-                .getTime()) <= 0) {
-            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+    //Тимчасовий ключ безпеки при скиданні
+//    public void createPasswordResetTokenForUser(final User user,final String token) {
+//        final PasswordResetToken passwordResetToken = new PasswordResetToken(token, user);
+//        passwordResetTokenRepository.save(passwordResetToken);
+//    }
 
-        return passToken.getUser();
-
-    }
+//    public User validatePasswordResetToken(long id, String token) {
+//        PasswordResetToken passToken =
+//                passwordResetTokenRepository.findByToken(token);
+//        if ((passToken == null) || (passToken.getUser()
+//                .getId() != id)) {
+//            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
+//        }
+//
+//        Calendar cal = Calendar.getInstance();
+//        if ((passToken.getExpiryDate()
+//                .getTime() - cal.getTime()
+//                .getTime()) <= 0) {
+//            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
+//        }
+//
+//        return passToken.getUser();
+//
+//    }
 }

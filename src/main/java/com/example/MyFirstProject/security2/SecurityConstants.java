@@ -9,7 +9,7 @@ public class SecurityConstants {
     public static final String SIGN_UP_ADMIN = "/admin/registration";
     public static final String SIGN_IN_URL = "/users/login";
     public static final String ACTIVATE_URL = "/users/activate";
-    public static final String SAVE_PASSWORD = "/users/savePassword";
     public static final String RESET_PASSWORD = "/users/resetPassword";
+    public static final String CHANGE_PASSWORD = "/users/changePassword";
 
 }

@@ -47,7 +47,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Entry points
         http.authorizeRequests()//
-                .antMatchers(SIGN_UP_USER, SIGN_UP_ADMIN, SIGN_IN_URL, ACTIVATE_URL,SAVE_PASSWORD,RESET_PASSWORD).permitAll()//
+                .antMatchers(SIGN_UP_USER, SIGN_UP_ADMIN, SIGN_IN_URL, ACTIVATE_URL, CHANGE_PASSWORD,RESET_PASSWORD).permitAll()//
                 .antMatchers("/admin/**").hasAnyAuthority("ADMIN")
                 // Disallow everything else..
                 .anyRequest().authenticated();

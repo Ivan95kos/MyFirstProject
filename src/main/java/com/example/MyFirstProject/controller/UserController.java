@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.AbstractMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 import static com.example.MyFirstProject.security2.SecurityConstants.HEADER_STRING;
 import static com.example.MyFirstProject.security2.SecurityConstants.TOKEN_PREFIX;
@@ -49,7 +48,7 @@ public class UserController {
     @Autowired
     private Environment env;
 
-//    @ExceptionHandler({HttpClientErrorException.class})
+//    @ExceptionHandler({CustomException.class})
 //    public String handleException() {
 //        return "Error";
 //    }
@@ -87,7 +86,7 @@ public class UserController {
 
     }
 
-    @PostMapping("/activate")
+    @GetMapping("/activate")
     public ResponseEntity<Map.Entry<String, String>> processConfirmationForm(@RequestParam("token") final String token){
 
         User user = userService.findOneByUsernameOrEmail(jwtTokenProvider.getUsername(token));
@@ -108,7 +107,7 @@ public class UserController {
     @PatchMapping("/myself")
     public String updateAccount(@RequestBody @Validated final UserUpdateDTO userUpdateDTO, final Authentication authentication) {
 
-        User user = userService.findOneByUsernameOrEmail(authentication.getName());
+        final User user = userService.findOneByUsernameOrEmail(authentication.getName());
 
         userService.updateAccount(user, userUpdateDTO);
 
@@ -127,40 +126,45 @@ public class UserController {
     public GenericResponse resetPassword(final HttpServletRequest request, @RequestParam("email") final String userEmail) {
         final User user = userService.findUserByEmail(userEmail);
         if (user != null) {
-            final String token = UUID.randomUUID().toString();
-            userService.createPasswordResetTokenForUser(user, token);
+
+            final String token = jwtTokenProvider.createToken(user);
+
             emailService.sendEmail(constructResetTokenEmail(getAppUrl(request), request.getLocale(), token, user));
         }
         return new GenericResponse(messages.getMessage("message.resetPasswordEmail", null, request.getLocale()));
     }
 
     @GetMapping("/changePassword")
-    public String showChangePasswordPage(Locale locale, Model model,
-                                         @RequestParam("id") long id, @RequestParam("token") String token) {
-        String result = securityService.validatePasswordResetToken(id, token);
-        if (result != null) {
-            model.addAttribute("message",
-                    messages.getMessage("auth.message." + result, null, locale));
-            return "redirect:/login?lang=" + locale.getLanguage();
-        }
-        return "redirect:/updatePassword.html?lang=" + locale.getLanguage();
+    public ResponseEntity<Map.Entry<String, String>> showChangePasswordPage(@RequestParam("token") final String token) {
+        final User user = userService.findOneByUsernameOrEmail(jwtTokenProvider.getUsername(token));
+
+        user.setEnabled(false);
+
+        MultiValueMap<String, String> headers = new HttpHeaders();
+
+        headers.add(HEADER_STRING, TOKEN_PREFIX + token);
+
+        Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
+
+        return new ResponseEntity<>(tok, headers, HttpStatus.OK);
     }
 
     @PostMapping("/savePassword")
-    public GenericResponse savePassword(Locale locale,
-                                        @RequestBody @Validated PasswordDTO passwordDto, @RequestParam("id") Long id, @RequestParam("token") String token) {
+    public GenericResponse savePassword(final Locale locale,
+                                        @RequestBody @Validated final PasswordDTO passwordDto, final Authentication authentication) {
 
-        User user = userService.validatePasswordResetToken(id, token);
+        User user = userService.findOneByUsernameOrEmail(authentication.getName());
+//        User user = userService.validatePasswordResetToken(id, token);
 
         userService.changeUserPassword(user, passwordDto.getNewPassword());
         return new GenericResponse(
-                messages.getMessage("message.resetPasswordSuc", null, locale));
+                messages.getMessage("success:true", null, locale), HttpStatus.OK);
     }
 
     // ============== NON-API ============
 
     private SimpleMailMessage constructResetTokenEmail(final String contextPath, final Locale locale, final String token, final User user) {
-        final String url = contextPath + "/users/changePassword?id=" + user.getId() + "&token=" + token;
+        final String url = contextPath + "/users/changePassword?token=" + token;
         final String message = messages.getMessage("message.resetPassword", null, locale);
         return constructEmail("Reset Password", message + " \r\n" + url, user);
     }
@@ -175,10 +179,7 @@ public class UserController {
     }
 
     private String getAppUrl(HttpServletRequest request) {
-        String subject = "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-        System.out.println(subject);
-        System.out.println(request.getServerName() + "============" + request.getServerPort() + "===========" + request.getContextPath());
-        return subject;
+        return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
     }
 
 }
