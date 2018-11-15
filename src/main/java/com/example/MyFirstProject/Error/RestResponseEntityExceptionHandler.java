@@ -16,14 +16,17 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @ControllerAdvice
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
-//    API
-
     @Autowired
     private MessageSource messageSource;
 
     @ExceptionHandler( { CustomException.class })
-    public ResponseEntity<Object> handleBadRequest(final CustomException ex, final WebRequest request) {
-        final String bodyOfResponse = ex.getMessage();
-        return handleExceptionInternal(ex, new GenericResponse(messageSource.getMessage(bodyOfResponse, null, request.getLocale()), ex.getHttpStatus()), new HttpHeaders(), ex.getHttpStatus(), request);
+    public ResponseEntity<Object> handleRequest(final CustomException exception, final WebRequest request) {
+        final String bodyOfResponse = exception.getMessage();
+        return handleExceptionInternal(
+                exception,
+                new GenericResponse(messageSource.getMessage(bodyOfResponse, null, request.getLocale()), exception.getHttpStatus()),
+                new HttpHeaders(),
+                exception.getHttpStatus(),
+                request);
     }
 }
