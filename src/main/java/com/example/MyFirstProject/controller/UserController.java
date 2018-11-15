@@ -6,28 +6,18 @@ import com.example.MyFirstProject.model.dto.SingInDTO;
 import com.example.MyFirstProject.model.dto.SingUpDTO;
 import com.example.MyFirstProject.model.dto.UserUpdateDTO;
 import com.example.MyFirstProject.security2.JwtTokenProvider;
-import com.example.MyFirstProject.service.EmailService;
 import com.example.MyFirstProject.service.UserService;
 import com.example.MyFirstProject.util.GenericResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.core.Authentication;
-import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.AbstractMap;
-import java.util.Locale;
-import java.util.Map;
-
-import static com.example.MyFirstProject.security2.SecurityConstants.HEADER_STRING;
-import static com.example.MyFirstProject.security2.SecurityConstants.TOKEN_PREFIX;
 
 @RestController
 @RequestMapping("/users")
@@ -38,9 +28,6 @@ public class UserController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private MessageSource messages;
@@ -54,64 +41,36 @@ public class UserController {
 //    }
 
     @PostMapping("/login")
-    public ResponseEntity<Map.Entry<String, String>> signIn(@RequestBody @Validated final SingInDTO singInDTO) {
+    public ResponseEntity<GenericResponse> signIn(@RequestBody @Validated final SingInDTO singInDTO) {
 
-        String token = userService.signIn(singInDTO);
+        return userService.getResponseEntityWithToken(jwtTokenProvider.createToken(userService.signIn(singInDTO)));
 
-        MultiValueMap<String, String> headers = new HttpHeaders();
-
-        headers.add(HEADER_STRING, TOKEN_PREFIX + token);
-
-        Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
-
-        return new ResponseEntity<>(tok, headers, HttpStatus.OK);
     }
 
     @PostMapping("/registration")
-    public ResponseEntity<String> singUpUser(@RequestBody @Validated final SingUpDTO singUpDTO, final HttpServletRequest request){
+    public ResponseEntity<GenericResponse> singUpUser(@RequestBody @Validated final SingUpDTO singUpDTO,
+                                                      final HttpServletRequest request) {
 
-        String token = userService.signUpUser(singUpDTO);
+        userService.sendEmailActivation(userService.signUpUser(singUpDTO), request);
 
-        String appUrl = request.getScheme() + "://" + request.getServerName();
-
-        SimpleMailMessage registrationEmail = new SimpleMailMessage();
-        registrationEmail.setTo(singUpDTO.getEmail());
-        registrationEmail.setSubject("Registration Confirmation");
-        registrationEmail.setText("To confirm your e-mail address, please click the link below:\n"
-                + appUrl + "/users/activate?token=" + token);
-
-        emailService.sendEmail(registrationEmail);
-
-        return new ResponseEntity<>("{success:true}", HttpStatus.OK) ;
-
+        return getGenericResponseResponseEntity(request, "message.regSucc");
     }
 
     @GetMapping("/activate")
-    public ResponseEntity<Map.Entry<String, String>> processConfirmationForm(@RequestParam("token") final String token){
+    public ResponseEntity<GenericResponse> processConfirmationForm(@RequestParam("token") final String token) {
 
-        User user = userService.findOneByUsernameOrEmail(jwtTokenProvider.getUsername(token));
+        return userService.getResponseEntityWithToken(jwtTokenProvider.createToken(userService.activationUser(token)));
 
-        user.setEnabled(true);
-
-        userService.saveAndFlush(user);
-
-        MultiValueMap<String, String> headers = new HttpHeaders();
-
-        headers.add(HEADER_STRING, TOKEN_PREFIX + token);
-
-        Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
-
-        return new ResponseEntity<>(tok, headers, HttpStatus.OK);
     }
 
     @PatchMapping("/myself")
-    public String updateAccount(@RequestBody @Validated final UserUpdateDTO userUpdateDTO, final Authentication authentication) {
+    public ResponseEntity<GenericResponse> updateAccount(@RequestBody @Validated final UserUpdateDTO userUpdateDTO,
+                                                         final Authentication authentication,
+                                                         final HttpServletRequest request) {
 
-        final User user = userService.findOneByUsernameOrEmail(authentication.getName());
+        userService.updateAccount(authentication.getName(), userUpdateDTO);
 
-        userService.updateAccount(user, userUpdateDTO);
-
-        return "successfully";
+        return getGenericResponseResponseEntity(request, "message.successfully");
     }
 
     @GetMapping("/me")
@@ -120,66 +79,40 @@ public class UserController {
         return userService.findOneByUsernameOrEmail(authentication.getName());
 
     }
-// переробити на гет запит  і окремо пост зробити
 
     @PostMapping("/resetPassword")
-    public GenericResponse resetPassword(final HttpServletRequest request, @RequestParam("email") final String userEmail) {
-        final User user = userService.findUserByEmail(userEmail);
-        if (user != null) {
+    public ResponseEntity<GenericResponse> resetPassword(final HttpServletRequest request,
+                                                         @RequestParam("email") final String email) {
+        userService.resetPassword(email, request);
 
-            final String token = jwtTokenProvider.createToken(user);
-
-            emailService.sendEmail(constructResetTokenEmail(getAppUrl(request), request.getLocale(), token, user));
-        }
-        return new GenericResponse(messages.getMessage("message.resetPasswordEmail", null, request.getLocale()));
+        return getGenericResponseResponseEntity(request, "message.resetPasswordEmail");
     }
 
     @GetMapping("/changePassword")
-    public ResponseEntity<Map.Entry<String, String>> showChangePasswordPage(@RequestParam("token") final String token) {
-        final User user = userService.findOneByUsernameOrEmail(jwtTokenProvider.getUsername(token));
+    public ResponseEntity<GenericResponse> showChangePasswordPage(@RequestParam("token") final String token) {
 
-        user.setEnabled(false);
-
-        MultiValueMap<String, String> headers = new HttpHeaders();
-
-        headers.add(HEADER_STRING, TOKEN_PREFIX + token);
-
-        Map.Entry<String, String> tok = new AbstractMap.SimpleEntry<>("token", token);
-
-        return new ResponseEntity<>(tok, headers, HttpStatus.OK);
+        return userService.getResponseEntityWithToken(jwtTokenProvider.createToken(userService.activationUser(token)));
     }
 
     @PostMapping("/savePassword")
-    public GenericResponse savePassword(final Locale locale,
-                                        @RequestBody @Validated final PasswordDTO passwordDto, final Authentication authentication) {
+    public ResponseEntity<GenericResponse> savePassword(@RequestBody @Validated final PasswordDTO passwordDTO,
+                                                        final Authentication authentication,
+                                                        final HttpServletRequest request) {
 
-        User user = userService.findOneByUsernameOrEmail(authentication.getName());
-//        User user = userService.validatePasswordResetToken(id, token);
-
-        userService.changeUserPassword(user, passwordDto.getNewPassword());
-        return new GenericResponse(
-                messages.getMessage("success:true", null, locale), HttpStatus.OK);
+        userService.savePassword(authentication.getName(), passwordDTO.getNewPassword());
+        return getGenericResponseResponseEntity(request, "message.successfully");
     }
 
     // ============== NON-API ============
 
-    private SimpleMailMessage constructResetTokenEmail(final String contextPath, final Locale locale, final String token, final User user) {
-        final String url = contextPath + "/users/changePassword?token=" + token;
-        final String message = messages.getMessage("message.resetPassword", null, locale);
-        return constructEmail("Reset Password", message + " \r\n" + url, user);
+    private ResponseEntity<GenericResponse> getGenericResponseResponseEntity(HttpServletRequest request,
+                                                                             String message) {
+        return new ResponseEntity<>(
+                new GenericResponse(messages.getMessage(
+                        message,
+                        null,
+                        request.getLocale()),
+                        HttpStatus.OK),
+                HttpStatus.OK);
     }
-
-    private SimpleMailMessage constructEmail(String subject, String body, User user) {
-        final SimpleMailMessage email = new SimpleMailMessage();
-        email.setSubject(subject);
-        email.setText(body);
-        email.setTo(user.getEmail());
-        email.setFrom(env.getProperty("support.email"));
-        return email;
-    }
-
-    private String getAppUrl(HttpServletRequest request) {
-        return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
-    }
-
 }

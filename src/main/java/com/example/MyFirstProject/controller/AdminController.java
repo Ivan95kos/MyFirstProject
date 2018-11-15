@@ -2,12 +2,12 @@ package com.example.MyFirstProject.controller;
 
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.SingUpDTO;
-import com.example.MyFirstProject.service.EmailService;
 import com.example.MyFirstProject.service.UserService;
+import com.example.MyFirstProject.util.GenericResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,37 +21,39 @@ public class AdminController {
     private UserService userService;
 
     @Autowired
-    private EmailService emailService;
+    private MessageSource messages;
 
     @PostMapping("/registration")
-    public ResponseEntity<String> signUp(@RequestBody @Validated final SingUpDTO singUpDTO, HttpServletRequest request) {
+    public ResponseEntity<GenericResponse> signUp(@RequestBody @Validated final SingUpDTO singUpDTO,
+                                                  final HttpServletRequest request) {
 
-        String token = userService.signUpAdmin(singUpDTO);
+        userService.sendEmailActivation(userService.signUpAdmin(singUpDTO), request);
 
-        String appUrl = request.getScheme() + "://" + request.getServerName();
-
-        SimpleMailMessage registrationEmail = new SimpleMailMessage();
-        registrationEmail.setTo(singUpDTO.getEmail());
-        registrationEmail.setSubject("Registration Confirmation");
-        registrationEmail.setText("To confirm your e-mail address, please click the link below:\n"
-                + appUrl + "/users/activate?token=" + token);
-
-        emailService.sendEmail(registrationEmail);
-
-        return new ResponseEntity<>("{success:true}", HttpStatus.OK) ;
+        return new ResponseEntity<>(
+                new GenericResponse(messages.getMessage(
+                        "message.regSucc",
+                        null,
+                        request.getLocale()),
+                        HttpStatus.OK),
+                HttpStatus.OK);
     }
 
-    @DeleteMapping("/users/{username}")
-    public String deleteAccount(@PathVariable String username) {
-        User user = userService.findOneByUsernameOrEmail(username);
-        userService.delete(user);
-        return username;
+    @DeleteMapping("/users/{usernameOrEmail}")
+    public ResponseEntity<GenericResponse> deleteAccount(@PathVariable String username,
+                                                         final HttpServletRequest request) {
+        userService.delete(userService.findByUsername(username));
+        return new ResponseEntity<>(
+                new GenericResponse(messages.getMessage(
+                        "message.deleteUser",
+                        null,
+                        request.getLocale()) + username,
+                        HttpStatus.OK),
+                HttpStatus.OK);
     }
 
     @GetMapping("/users/{username}")
     public User search(@PathVariable String username) {
-
-        return userService.findOneByUsernameOrEmail(username);
+        return userService.findByUsername(username);
 
     }
 }
