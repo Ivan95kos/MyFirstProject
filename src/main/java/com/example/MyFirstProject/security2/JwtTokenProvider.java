@@ -12,15 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.Objects;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.example.MyFirstProject.security2.SecurityConstants.*;
@@ -41,9 +42,9 @@ public class JwtTokenProvider {
 
     public String createToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
-
-//        claims.put("username", user.getUsername());
-        claims.put("role", user.getRoles().stream().map(s -> new SimpleGrantedAuthority(s.getAuthority())).filter(Objects::nonNull).collect(Collectors.toList()));
+        claims.put(EMAIL, user.getEmail());
+        claims.put(ENABLED, user.isEnabled());
+        claims.put(AUTHORITY, user.getRoles().stream().map(role -> role.name()).collect(Collectors.toList()));
         Date now = new Date();
         Date validity = new Date(now.getTime() + EXPIRATION_TIME);
 
@@ -56,12 +57,23 @@ public class JwtTokenProvider {
     }
 
     public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(getUsername(token));
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        Claims claims = getBody(token);
+
+        if (!claims.get(ENABLED, Boolean.class)) {
+            throw new CustomException("message.AccountNotActivated", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        List<String> roles = claims.get(AUTHORITY, ArrayList.class);
+        List<GrantedAuthority> authorities = roles.stream().map(authority -> new SimpleGrantedAuthority(authority)).collect(Collectors.toList());
+        return new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
     }
 
     public String getUsername(String token) {
         return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public Claims getBody(String token) {
+        return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
     }
 
     public String resolveToken(HttpServletRequest request) {
