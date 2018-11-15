@@ -87,7 +87,9 @@ public class UserService {
 
             user.setRoles(Collections.singleton(Role.USER));
 
-            return userRepository.save(user);
+            userRepository.save(user);
+
+            return user;
 
         } else {
             throw new CustomException("UsernameOrEmail is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
