@@ -12,7 +12,6 @@ public class GenericResponse {
 //        private String error;
         private HttpStatus httpStatus;
 
-
         public GenericResponse(final String message) {
             super();
             this.message = message;
