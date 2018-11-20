@@ -22,7 +22,6 @@ import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
@@ -107,28 +106,29 @@ public class UserService {
 
             user.setRoles(Collections.singleton(Role.ADMIN));
 
-            return userRepository.save(user);
+            userRepository.save(user);
+
+            return user;
 
         } else {
             throw new CustomException("UsernameOrEmail is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
         }
     }
 
-    public User updateAccount(final String username, final UserUpdateDTO userUpdateDTO) {
+    public User updateAccount(final User user, final UserUpdateDTO userUpdateDTO) {
+
         Set<Language> language = userUpdateDTO.getLanguages();
 
         languageRepository.saveAll(language);
-
-        User user = findByUsername(username);
-
-//        language.forEach(lan -> lan.getUsers().add(user));
 
         user.setFirstName(userUpdateDTO.getFirstName());
         user.setLastName(userUpdateDTO.getLastName());
         user.setAge(userUpdateDTO.getAge());
         user.setLanguages(userUpdateDTO.getLanguages());
 
-        return userRepository.saveAndFlush(user);
+        userRepository.saveAndFlush(user);
+
+        return user;
     }
 
     public User findByUsername(String username) {
@@ -150,7 +150,7 @@ public class UserService {
     public User findOneByUsernameOrEmail(final String usernameOrEmail) {
         User user = userRepository.findOneByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
         if (user == null) {
-            throw new UsernameNotFoundException("User with nameOrEmail: " + usernameOrEmail + " not found");
+            throw new CustomException("User with usernameOrEmail: " + usernameOrEmail + " not found", HttpStatus.NOT_FOUND);
         }
 
         return user;
@@ -164,14 +164,10 @@ public class UserService {
         userRepository.saveAndFlush(user);
     }
 
-    public void sendEmailActivation(final User user, final HttpServletRequest request) {
-
-        String token = jwtTokenProvider.createToken(user);
-
-//        String appUrl = request.getScheme() + "://" + request.getServerName();
+    public void sendEmailActivation(final String token, final String email, final HttpServletRequest request) {
 
         SimpleMailMessage registrationEmail = new SimpleMailMessage();
-        registrationEmail.setTo(user.getEmail());
+        registrationEmail.setTo(email);
         registrationEmail.setSubject("Registration Confirmation");
         registrationEmail.setText("To confirm your e-mail address, please click the link below:\n"
                 + getAppUrl(request) + "/users/activate?token=" + token);
@@ -188,14 +184,13 @@ public class UserService {
         return new ResponseEntity<>(new GenericResponse(token, HttpStatus.OK), headers, HttpStatus.OK);
     }
 
-    public User activationUser(String token) {
-        jwtTokenProvider.validateToken(token);
-
-        User user = findByUsername(jwtTokenProvider.getUsername(token));
+    public User activationUser(User user) {
 
         user.setEnabled(true);
 
-        return userRepository.saveAndFlush(user);
+        userRepository.saveAndFlush(user);
+
+        return user;
 
     }
 
@@ -244,30 +239,4 @@ public class UserService {
         return request.getScheme() + "://" + request.getServerName() +
                 ":" + request.getServerPort() + request.getContextPath();
     }
-
-
-    //Тимчасовий ключ безпеки при скиданні
-//    public void createPasswordResetTokenForUser(final User user,final String token) {
-//        final PasswordResetToken passwordResetToken = new PasswordResetToken(token, user);
-//        passwordResetTokenRepository.save(passwordResetToken);
-//    }
-
-//    public User validatePasswordResetToken(long id, String token) {
-//        PasswordResetToken passToken =
-//                passwordResetTokenRepository.findByToken(token);
-//        if ((passToken == null) || (passToken.getUser()
-//                .getId() != id)) {
-//            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
-//        }
-//
-//        Calendar cal = Calendar.getInstance();
-//        if ((passToken.getExpiryDate()
-//                .getTime() - cal.getTime()
-//                .getTime()) <= 0) {
-//            throw new CustomException("invalidToken", HttpStatus.UNPROCESSABLE_ENTITY);
-//        }
-//
-//        return passToken.getUser();
-//
-//    }
 }

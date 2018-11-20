@@ -1,17 +1,18 @@
 package com.example.MyFirstProject.service;
 
+import com.example.MyFirstProject.exception.CustomException;
 import com.example.MyFirstProject.exception.FileStorageException;
 import com.example.MyFirstProject.exception.MyFileNotFoundException;
 import com.example.MyFirstProject.model.MusicMetaDate;
-import com.example.MyFirstProject.model.MyFile;
+import com.example.MyFirstProject.model.MyMusicFile;
 import com.example.MyFirstProject.model.User;
-import com.example.MyFirstProject.property.FileStorageProperties;
 import com.example.MyFirstProject.repository.MusicMetaDateRepository;
-import com.example.MyFirstProject.repository.MyFileRepository;
+import com.example.MyFirstProject.repository.MyMusicFileRepository;
 import com.mpatric.mp3agic.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +21,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.List;
@@ -28,49 +28,38 @@ import java.util.Objects;
 import java.util.Set;
 
 @Service
-public class FileStorageService {
+public class MusicFileStorageService {
 
     private final static String AUDIO_EXTENSIONS = "audio/mpeg";
     private final static String EMPTY_LINE = "";
 
     @Autowired
-    private MyFileRepository myFileRepository;
-
-    private final Path fileStorageLocation;
+    private MyMusicFileRepository myMusicFileRepository;
 
     @Autowired
     private MusicMetaDateRepository musicMetaDateRepository;
+
     @Autowired
     private UserService userService;
 
     @Autowired
-    public FileStorageService(final FileStorageProperties fileStorageProperties) {
-        this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
-                .toAbsolutePath().normalize();
-        try {
-            Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new FileStorageException("Could not create the directory where the uploaded files will be stored.", ex);
-        }
-    }
+    private Path fileStorageLocation;
 
-    public String storeFile(final MultipartFile file, final String username) {
+    public MyMusicFile storeMusicFile(final MultipartFile file, final User user) {
+
+        if (!Objects.equals(file.getContentType(), AUDIO_EXTENSIONS)) {
+            throw new CustomException("message.nonMusic", HttpStatus.BAD_REQUEST);
+        }
+
         // Normalize file name
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
-        String location = fileStorageLocation.toFile().getAbsolutePath() + "/" + fileName;
 
-        MyFile myFile = new MyFile();
-        User user = userService.findOneByUsernameOrEmail(username);
-
-        myFile.setLocalAddress(location);
-        myFile.setUser(user);
+        // Check if the file's name contains invalid characters
+        if (fileName.contains("..")) {
+            throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
+        }
 
         try {
-            // Check if the file's name contains invalid characters
-            if (fileName.contains("..")) {
-                throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
-            }
-
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
 
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
@@ -79,28 +68,22 @@ public class FileStorageService {
             throw new FileStorageException("Could not store file " + fileName + ". Please try again!", ex);
         }
 
-//        if (!myFileRepository.existsByLocalAddress(location)) {
+        String location = fileStorageLocation.toFile().getAbsolutePath() + "/" + fileName;
 
-        if (Objects.equals(file.getContentType(), AUDIO_EXTENSIONS)) {
-                myFile.setMusicMetaDate(saveMetaDate(fileName, location));
-            }
-            myFileRepository.save(myFile);
+        MyMusicFile myMusicFile = new MyMusicFile();
 
-//        } else {
-//            MyFile saveFile = myFileRepository.findByLocalAddress(location);
-//
-//            MusicMetaDate musicMetaDate = saveFile.getMusicMetaDate();
-//
-//            myFile.setMusicMetaDate(musicMetaDate);
-//
-//            myFileRepository.save(myFile);
-//        }
+        myMusicFile.setFileName(fileName);
+        myMusicFile.setLocalAddress(location);
+        myMusicFile.setContentType(file.getContentType());
+        myMusicFile.setUser(user);
 
-        user.getFiles().add(myFile);
+        myMusicFileRepository.save(myMusicFile);
+
+        user.getFiles().add(myMusicFile);
 
         userService.saveAndFlush(user);
 
-        return fileName;
+        return myMusicFile;
     }
 
     public Resource loadFileAsResource(final String fileName) {
@@ -139,36 +122,35 @@ public class FileStorageService {
 
     public MusicMetaDate findUserFile(final Long idUser, final Long idFile) {
 
-        List<MyFile> listIdMusics = myFileRepository.findByUserId(idUser);
+        List<MyMusicFile> listIdMusics = myMusicFileRepository.findByUserId(idUser);
 
-        for (MyFile myFile : listIdMusics) {
-            if (myFile.getMusicMetaDate().getId().equals(idFile)) {
-                return myFile.getMusicMetaDate();
+        for (MyMusicFile myMusicFile : listIdMusics) {
+            if (myMusicFile.getMusicMetaDate().getId().equals(idFile)) {
+                return myMusicFile.getMusicMetaDate();
             }
         }
-
-//        if (listIdMusics.size()>idFile) {
-//            int idFiles = idFile.intValue();
-//
-//            MyFile myFile = listIdMusics.get(idFiles);
-//
-//            return myFile.getMusicMetaDate();
-//        }
 
         return new MusicMetaDate();
     }
 
-    public MusicMetaDate saveMetaDate(final String fileName, final String location) {
-
-        MusicMetaDate musicMetaDate = new MusicMetaDate();
-        musicMetaDate.setNameMusic(fileName.substring(0, fileName.length() - 4).trim());
-
+    public MyMusicFile storeMp3FileToFile(MyMusicFile myMusicFile) {
         Mp3File mp3file = null;
         try {
-            mp3file = new Mp3File(location);
+            mp3file = new Mp3File(myMusicFile.getLocalAddress());
         } catch (IOException | UnsupportedTagException | InvalidDataException e) {
             e.getMessage();
         }
+        myMusicFile.setMp3File(mp3file);
+
+        return myMusicFile;
+    }
+
+    public void saveMetaDateMusicFile(final MyMusicFile myMusicFile) {
+
+        final MusicMetaDate musicMetaDate = new MusicMetaDate();
+        musicMetaDate.setNameMusic(myMusicFile.getFileName().substring(0, myMusicFile.getFileName().length() - 4).trim());
+
+        Mp3File mp3file = myMusicFile.getMp3File();
 
         if (Objects.requireNonNull(mp3file).hasId3v1Tag()) {
             ID3v1 id3v1Tag = mp3file.getId3v1Tag();
@@ -192,6 +174,10 @@ public class FileStorageService {
             musicMetaDate.setComment(id3v2Tag.getComment());
         }
 
-        return musicMetaDateRepository.save(musicMetaDate);
+        musicMetaDateRepository.save(musicMetaDate);
+
+        myMusicFile.setMusicMetaDate(musicMetaDate);
+
+        myMusicFileRepository.saveAndFlush(myMusicFile);
     }
 }

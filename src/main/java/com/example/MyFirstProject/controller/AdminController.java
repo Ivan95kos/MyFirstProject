@@ -2,6 +2,7 @@ package com.example.MyFirstProject.controller;
 
 import com.example.MyFirstProject.model.User;
 import com.example.MyFirstProject.model.dto.SingUpDTO;
+import com.example.MyFirstProject.security2.JwtTokenProvider;
 import com.example.MyFirstProject.service.UserService;
 import com.example.MyFirstProject.util.GenericResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +22,19 @@ public class AdminController {
     private UserService userService;
 
     @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
     private MessageSource messages;
 
     @PostMapping("/registration")
     public ResponseEntity<GenericResponse> signUp(@RequestBody @Validated final SingUpDTO singUpDTO,
                                                   final HttpServletRequest request) {
 
-        userService.sendEmailActivation(userService.signUpAdmin(singUpDTO), request);
+        userService.sendEmailActivation(
+                jwtTokenProvider.createToken(userService.signUpAdmin(singUpDTO)),
+                singUpDTO.getEmail(),
+                request);
 
         return new ResponseEntity<>(
                 new GenericResponse(messages.getMessage(

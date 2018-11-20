@@ -58,7 +58,7 @@ public class User {
     @JsonManagedReference
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Column(name = "files")
-    private Set<MyFile> files = new HashSet<>();
+    private Set<MyMusicFile> files = new HashSet<>();
 
     public User(String username, String email,String password) {
         this.username = username;

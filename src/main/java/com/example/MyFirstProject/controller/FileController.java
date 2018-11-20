@@ -2,9 +2,11 @@ package com.example.MyFirstProject.controller;
 
 
 import com.example.MyFirstProject.model.MusicMetaDate;
+import com.example.MyFirstProject.model.MyMusicFile;
 import com.example.MyFirstProject.payload.UploadFileResponse;
-import com.example.MyFirstProject.service.FileStorageService;
+import com.example.MyFirstProject.service.MusicFileStorageService;
 import com.example.MyFirstProject.service.MusicMetaDateService;
+import com.example.MyFirstProject.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,23 +38,28 @@ public class FileController {
     private MusicMetaDateService musicMetaDateService;
 
     @Autowired
-    private FileStorageService fileStorageService;
+    private MusicFileStorageService musicFileStorageService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file, Authentication authentication) {
-        String filename = fileStorageService.storeFile(file, authentication.getName());
+    public UploadFileResponse uploadFile(@RequestParam("file") final MultipartFile file, final Authentication authentication) {
+        MyMusicFile myMusicFile = musicFileStorageService.storeMusicFile(file, userService.findByUsername(authentication.getName()));
+
+        musicFileStorageService.saveMetaDateMusicFile(musicFileStorageService.storeMp3FileToFile(myMusicFile));
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/file/downloadFile/")
-                .path(filename)
+                .path("/files/downloadFile/")
+                .path(myMusicFile.getFileName())
                 .toUriString();
 
-        return new UploadFileResponse(filename, fileDownloadUri,
+        return new UploadFileResponse(myMusicFile.getFileName(), fileDownloadUri,
                 file.getContentType(), file.getSize());
     }
 
     @PostMapping("/uploadMultipleFiles")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files, Authentication authentication) {
+    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") final MultipartFile[] files, final Authentication authentication) {
         return Arrays.asList(files)
                 .stream()
                 .map(file -> uploadFile(file, authentication))
@@ -60,9 +67,9 @@ public class FileController {
     }
 
     @GetMapping("/downloadFile/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable final String fileName, final HttpServletRequest request) {
         // Load file as Resource
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
+        final Resource resource = musicFileStorageService.loadFileAsResource(fileName);
 
         // Try to determine file's content type
         String contentType = null;
@@ -84,12 +91,12 @@ public class FileController {
     }
 
     @GetMapping("/search")
-    public Set<MusicMetaDate> search(@RequestParam("fileName") String fileName) {
-        return fileStorageService.findFile(fileName);
+    public Set<MusicMetaDate> search(@RequestParam("fileName") final String fileName) {
+        return musicFileStorageService.findFile(fileName);
     }
 
     @GetMapping
-    public Page<MusicMetaDate> getMusicMetaDate(Pageable pageable){
+    public Page<MusicMetaDate> getMusicMetaDate(final Pageable pageable) {
         return musicMetaDateService.getAll(pageable);
     }
 }

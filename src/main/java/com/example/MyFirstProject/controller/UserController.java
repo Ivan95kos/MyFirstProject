@@ -10,7 +10,6 @@ import com.example.MyFirstProject.service.UserService;
 import com.example.MyFirstProject.util.GenericResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,12 +31,9 @@ public class UserController {
     @Autowired
     private MessageSource messages;
 
-    @Autowired
-    private Environment env;
-
 //    @ExceptionHandler({CustomException.class})
 //    public String handleException() {
-//        return "Error";
+//        return "error";
 //    }
 
     @PostMapping("/login")
@@ -51,7 +47,10 @@ public class UserController {
     public ResponseEntity<GenericResponse> singUpUser(@RequestBody @Validated final SingUpDTO singUpDTO,
                                                       final HttpServletRequest request) {
 
-        userService.sendEmailActivation(userService.signUpUser(singUpDTO), request);
+        userService.sendEmailActivation(
+                jwtTokenProvider.createToken(userService.signUpUser(singUpDTO)),
+                singUpDTO.getEmail(),
+                request);
 
         return getGenericResponseResponseEntity(request, "message.regSucc");
     }
@@ -59,7 +58,13 @@ public class UserController {
     @GetMapping("/activate")
     public ResponseEntity<GenericResponse> processConfirmationForm(@RequestParam("token") final String token) {
 
-        return userService.getResponseEntityWithToken(jwtTokenProvider.createToken(userService.activationUser(token)));
+        jwtTokenProvider.validateToken(token);
+
+        return userService.getResponseEntityWithToken(
+                jwtTokenProvider.createToken(
+                        userService.activationUser(
+                                userService.findByUsername(
+                                        jwtTokenProvider.getUsername(token)))));
 
     }
 
@@ -68,7 +73,7 @@ public class UserController {
                                                          final Authentication authentication,
                                                          final HttpServletRequest request) {
 
-        userService.updateAccount(authentication.getName(), userUpdateDTO);
+        userService.updateAccount(userService.findByUsername(authentication.getName()), userUpdateDTO);
 
         return getGenericResponseResponseEntity(request, "message.successfully");
     }
@@ -91,7 +96,13 @@ public class UserController {
     @GetMapping("/changePassword")
     public ResponseEntity<GenericResponse> showChangePasswordPage(@RequestParam("token") final String token) {
 
-        return userService.getResponseEntityWithToken(jwtTokenProvider.createToken(userService.activationUser(token)));
+        jwtTokenProvider.validateToken(token);
+
+        return userService.getResponseEntityWithToken(
+                jwtTokenProvider.createToken(
+                        userService.activationUser(
+                                userService.findByUsername(
+                                        jwtTokenProvider.getUsername(token)))));
     }
 
     @PostMapping("/savePassword")

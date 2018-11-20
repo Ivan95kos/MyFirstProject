@@ -1,4 +1,4 @@
-package com.example.MyFirstProject.Error;
+package com.example.MyFirstProject.error;
 
 import com.example.MyFirstProject.exception.CustomException;
 import com.example.MyFirstProject.util.GenericResponse;
