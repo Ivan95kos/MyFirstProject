@@ -4,7 +4,7 @@ package com.example.MyFirstProject.controller;
 import com.example.MyFirstProject.model.MusicMetaDate;
 import com.example.MyFirstProject.model.MyMusicFile;
 import com.example.MyFirstProject.payload.UploadFileResponse;
-import com.example.MyFirstProject.service.MusicFileStorageService;
+import com.example.MyFirstProject.service.MusicFileService;
 import com.example.MyFirstProject.service.MusicMetaDateService;
 import com.example.MyFirstProject.service.UserService;
 import org.slf4j.Logger;
@@ -38,16 +38,16 @@ public class FileController {
     private MusicMetaDateService musicMetaDateService;
 
     @Autowired
-    private MusicFileStorageService musicFileStorageService;
+    private MusicFileService musicFileService;
 
     @Autowired
     private UserService userService;
 
     @PostMapping("/uploadFile")
     public UploadFileResponse uploadFile(@RequestParam("file") final MultipartFile file, final Authentication authentication) {
-        MyMusicFile myMusicFile = musicFileStorageService.storeMusicFile(file, userService.findByUsername(authentication.getName()));
+        MyMusicFile myMusicFile = musicFileService.storeMusicFile(file, userService.findByUsername(authentication.getName()));
 
-        musicFileStorageService.saveMetaDateMusicFile(musicFileStorageService.storeMp3FileToFile(myMusicFile));
+        musicFileService.saveMetaDateMusicFile(musicFileService.storeMp3FileToFile(myMusicFile));
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/files/downloadFile/")
@@ -69,7 +69,7 @@ public class FileController {
     @GetMapping("/downloadFile/{fileName:.+}")
     public ResponseEntity<Resource> downloadFile(@PathVariable final String fileName, final HttpServletRequest request) {
         // Load file as Resource
-        final Resource resource = musicFileStorageService.loadFileAsResource(fileName);
+        final Resource resource = musicFileService.loadFileAsResource(fileName);
 
         // Try to determine file's content type
         String contentType = null;
@@ -92,7 +92,7 @@ public class FileController {
 
     @GetMapping("/search")
     public Set<MusicMetaDate> search(@RequestParam("fileName") final String fileName) {
-        return musicFileStorageService.findFile(fileName);
+        return musicFileService.findFile(fileName);
     }
 
     @GetMapping

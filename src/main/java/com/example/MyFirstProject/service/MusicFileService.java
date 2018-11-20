@@ -28,7 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Service
-public class MusicFileStorageService {
+public class MusicFileService {
 
     private final static String AUDIO_EXTENSIONS = "audio/mpeg";
     private final static String EMPTY_LINE = "";
